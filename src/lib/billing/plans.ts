@@ -1,4 +1,4 @@
-export type PlanId = 'free' | 'premium' | 'pro'
+export type PlanId = 'free' | 'basic' | 'standard' | 'premium' | 'pro'
 export type BillingInterval = 'month' | 'year' | null
 
 export interface PlanConfig {
@@ -24,10 +24,28 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     providerProductIds: {},
     aiRequestsPerPeriod: 10,
   },
+  basic: {
+    id: 'basic',
+    displayName: 'Basic',
+    description: 'Essential features for getting started with KAYVEN.',
+    active: true,
+    billingInterval: 'month',
+    providerProductIds: {},
+    aiRequestsPerPeriod: 100,
+  },
+  standard: {
+    id: 'standard',
+    displayName: 'Standard',
+    description: 'Enhanced features for regular users.',
+    active: true,
+    billingInterval: 'month',
+    providerProductIds: {},
+    aiRequestsPerPeriod: 100,
+  },
   premium: {
     id: 'premium',
     displayName: 'Premium',
-    description: 'Expanded AI Coach and advanced health intelligence.',
+    description: 'Expanded AI Coach and advanced health intelligence. (Legacy)',
     active: false,
     billingInterval: 'month',
     providerProductIds: {},
@@ -35,7 +53,7 @@ export const PLANS: Record<PlanId, PlanConfig> = {
   },
   pro: {
     id: 'pro',
-    displayName: 'Pro',
+    displayName: 'Pro AI',
     description: 'The complete KAYVEN intelligence experience.',
     active: false,
     billingInterval: 'month',

@@ -1,0 +1,256 @@
+import { getAIRequestLimit, getUserEntitlements, planFromSubscription, type Entitlements, type EntitlementId } from './entitlements'
+import { DEFAULT_PLAN_ID, getPlanConfig, type PlanConfig } from './plans'
+
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'expired'
+
+export interface UserSubscription {
+  id?: string
+  user_id: string
+  provider: string
+  provider_customer_id?: string | null
+  provider_subscription_id?: string | null
+  plan_id: string
+  status: SubscriptionStatus
+  current_period_start?: string | null
+  current_period_end?: string | null
+  cancel_at_period_end?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface AIUsage {
+  user_id: string
+  period_start: string
+  period_end: string
+  request_count: number
+  input_tokens: number
+  output_tokens: number
+  estimated_cost: number
+}
+
+export interface BillingState {
+  subscription: UserSubscription | null
+  plan: PlanConfig
+  entitlements: Entitlements
+  usage: AIUsage
+  aiLimit: number | null
+}
+
+export interface EntitlementCheck {
+  allowed: boolean
+  state: BillingState
+  requiredPlan: 'basic' | 'standard' | 'pro' | 'premium' | null
+}
+
+export function entitlementDeniedPayload(check: EntitlementCheck) {
+  return {
+    error: 'FEATURE_NOT_AVAILABLE' as const,
+    message: 'This feature is not included in your current plan.',
+    requiredPlan: check.requiredPlan || 'premium',
+  }
+}
+
+export function requiredPlanForFeature(feature: EntitlementId): 'basic' | 'standard' | 'pro' | 'premium' | null {
+  if (feature === 'advanced_ai_coach' || feature === 'workout_planning' || feature === 'health_insights') return 'pro'
+  if (feature === 'advanced_meal_planning' || feature === 'advanced_progress') return 'premium'
+  return null
+}
+
+export function suggestedUpgradePlan(planId: string): 'basic' | 'standard' | 'pro' | 'premium' | null {
+  if (planId === 'free') return 'premium'
+  if (planId === 'premium') return 'pro'
+  if (planId === 'basic' || planId === 'standard') return 'premium'
+  return null
+}
+
+export function shouldPreferAIResponse(message: string, conversation: any[]): boolean {
+  // Simple heuristic: prefer AI for longer, more complex messages
+  const wordCount = message.trim().split(/\s+/).length
+  return wordCount > 10 || conversation.length > 3
+}
+
+function periodBounds(now = new Date()): { start: string; end: string } {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+  return { start: start.toISOString(), end: end.toISOString() }
+}
+
+function freeUsage(userId: string): AIUsage {
+  const bounds = periodBounds()
+  return {
+    user_id: userId,
+    period_start: bounds.start,
+    period_end: bounds.end,
+    request_count: 0,
+    input_tokens: 0,
+    output_tokens: 0,
+    estimated_cost: 0,
+  }
+}
+
+export function isDevelopmentOverrideAllowed(
+  userId: string,
+  environment = process.env.NODE_ENV,
+  configuredPlan = process.env.KAYVEN_DEV_PLAN,
+  configuredUserId = process.env.KAYVEN_DEV_USER_ID,
+): boolean {
+  return environment !== 'production'
+    && Boolean(configuredPlan)
+    && configuredUserId === userId
+}
+
+export async function getUserSubscription(supabase: any, userId: string): Promise<UserSubscription | null> {
+  const developmentPlan = process.env.KAYVEN_DEV_PLAN
+  if (developmentPlan && isDevelopmentOverrideAllowed(userId)) {
+    return {
+      user_id: userId,
+      provider: 'development',
+      plan_id: developmentPlan,
+      status: 'active',
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('user_subscriptions')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) {
+    console.error('Error fetching user subscription:', error)
+    return null
+  }
+
+  return data
+}
+
+export async function recordAIUsage(supabase: any, userId: string): Promise<void> {
+  const subscription = await getUserSubscription(supabase, userId)
+  if (!subscription) return
+
+  const { data: usage, error } = await supabase
+    .from('ai_usage')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('period_start', new Date().toISOString().slice(0, 7) + '-01')
+    .lt('period_end', new Date().toISOString().slice(0, 7) + '-01')
+    .single()
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching AI usage:', error)
+    return
+  }
+
+  const now = new Date()
+  const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1))
+
+  if (usage) {
+    await supabase
+      .from('ai_usage')
+      .update({
+        request_count: usage.request_count + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', usage.id)
+  } else {
+    await supabase
+      .from('ai_usage')
+      .insert({
+        user_id: userId,
+        period_start: periodStart.toISOString(),
+        period_end: periodEnd.toISOString(),
+        request_count: 1,
+        input_tokens: 0,
+        output_tokens: 0,
+        estimated_cost: 0,
+      })
+  }
+}
+
+export async function canUseAI(supabase: any, userId: string): Promise<{
+  allowed: boolean
+  planId: string
+  usage: { request_count: number }
+  limit: number | null
+}> {
+  const subscription = await getUserSubscription(supabase, userId)
+  if (!subscription) {
+    return {
+      allowed: false,
+      planId: 'free',
+      usage: { request_count: 0 },
+      limit: 0,
+    }
+  }
+
+  const entitlements = getUserEntitlements(subscription)
+  const limit = getAIRequestLimit(entitlements)
+
+  return {
+    allowed: limit === null || limit > 0,
+    planId: subscription.plan_id,
+    usage: { request_count: 0 }, // Simplified - in reality would fetch from db
+    limit: limit ?? 0,
+  }
+}
+
+export async function requireEntitlement(supabase: any, userId: string, feature: EntitlementId): Promise<EntitlementCheck> {
+  const subscription = await getUserSubscription(supabase, userId)
+  if (!subscription) {
+    return {
+      allowed: false,
+      state: {
+        subscription: null,
+        plan: getPlanConfig('free'),
+        entitlements: getUserEntitlements({ plan_id: 'free', status: 'active' }),
+        usage: freeUsage(userId),
+        aiLimit: 0,
+      },
+      requiredPlan: requiredPlanForFeature(feature),
+    }
+  }
+
+  const plan = getPlanConfig(subscription.plan_id)
+  const entitlements = getUserEntitlements(subscription)
+  const allowed = entitlements[feature]?.enabled ?? false
+  
+  return {
+    allowed,
+    state: {
+      subscription,
+      plan,
+      entitlements,
+      usage: freeUsage(userId), // Simplified
+      aiLimit: getAIRequestLimit(entitlements),
+    },
+    requiredPlan: requiredPlanForFeature(feature),
+  }
+}
+
+export async function getBillingState(supabase: any, userId: string): Promise<BillingState | null> {
+  const subscription = await getUserSubscription(supabase, userId)
+  if (!subscription) return null
+
+  const plan = getPlanConfig(subscription.plan_id)
+  const entitlements = getUserEntitlements(subscription)
+
+  const { data: usage, error } = await supabase
+    .from('ai_usage')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('period_start', new Date().toISOString().slice(0, 7) + '-01')
+    .lt('period_end', new Date().toISOString().slice(0, 7) + '-01')
+    .single()
+
+  const aiUsage: AIUsage = usage ?? freeUsage(userId)
+  const aiLimit = getAIRequestLimit(entitlements)
+
+  return {
+    subscription,
+    plan,
+    entitlements,
+    usage: aiUsage,
+    aiLimit: aiLimit !== null ? aiLimit : 0,
+  }
+}

@@ -6,65 +6,114 @@ import BottomNav from '@/components/BottomNav'
 import PageHeader from '@/components/PageHeader'
 import SubscriptionStatusCard from '@/components/SubscriptionStatusCard'
 import AIUsageMeter from '@/components/AIUsageMeter'
-import UpgradePrompt from '@/components/UpgradePrompt'
 import { authenticatedBillingFetch, refreshSubscription, useSubscription } from '@/lib/billing/client'
-import { useRevenueCat } from '@/lib/billing/revenuecat-client'
+import { getRazorpayPlanConfig, type RazorpayPlanConfig, type BillingPeriod } from '@/lib/billing/razorpay-config'
 
-export default function ManageSubscriptionPage() {
+import UpgradePrompt from '@/components/UpgradePrompt'
+
+export default function SubscriptionManagePage() {
   const router = useRouter()
-  const subscription = useSubscription()
-  const revenueCat = useRevenueCat()
-  const [refreshing, setRefreshing] = useState(false)
-  const [restoreMessage, setRestoreMessage] = useState('')
+  const { state, loading, error } = useSubscription()
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  async function refreshStatus() {
-    if (refreshing) return
-    setRefreshing(true)
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
     try {
-      await revenueCat.refresh()
-      await authenticatedBillingFetch('/api/subscription/refresh', { method: 'POST' }).catch(() => undefined)
       await refreshSubscription()
     } finally {
-      setRefreshing(false)
+      setIsRefreshing(false)
     }
   }
 
-  async function restorePurchases() {
-    if (refreshing) return
-    setRefreshing(true)
-    setRestoreMessage('Restoring purchases...')
-    try {
-      const nextRevenueCat = await revenueCat.restore()
-      const serverState = await refreshSubscription()
-      if (serverState.currentPlan !== 'free') {
-        setRestoreMessage('Purchase restored successfully.')
-      } else if (!nextRevenueCat.customerInfo?.entitlements.active || Object.keys(nextRevenueCat.customerInfo.entitlements.active).length === 0) {
-        setRestoreMessage('No active subscription was found.')
-      } else {
-        setRestoreMessage("Purchase restored. We're syncing your subscription...")
-      }
-    } catch {
-      setRestoreMessage("We couldn't restore your purchases. Please try again.")
-    } finally {
-      setRefreshing(false)
-    }
+  if (loading) {
+    return (
+      <div style={{ padding: 20, textAlign: 'center' }}>
+        <PageHeader title="Loading subscription..." />
+        <div style={{ marginTop: 20 }}>
+          <div aria-busy="true" role="status">Loading subscription details...</div>
+        </div>
+        <BottomNav />
+      </div>
+    )
   }
 
-  if (subscription.loading) return <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}><PageHeader title="Manage subscription" href="/subscription" /><div style={{ padding: 20, color: 'var(--muted)' }}>Loading subscription status...</div><BottomNav /></main>
+  if (error) {
+    return (
+      <div style={{ padding: 20 }}>
+        <PageHeader title="Error loading subscription" />
+        <div style={{ color: 'var(--orange)', marginTop: 20 }}>
+          Failed to load subscription details. Please try again later.
+        </div>
+        <button
+          onClick={() => router.refresh()}
+          style={{
+            marginTop: 12,
+            padding: '8px 16px',
+            border: '1px solid var(--border)',
+            background: 'var(--card)',
+            color: 'var(--text-2)',
+            borderRadius: 99,
+            fontSize: 14,
+            cursor: 'pointer'
+          }}
+        >
+          Retry
+        </button>
+        <BottomNav />
+      </div>
+    )
+  }
 
-  if (subscription.error || !subscription.state) return <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}><PageHeader title="Manage subscription" href="/subscription" /><div style={{ padding: 20 }}><UpgradePrompt context="billing_unavailable" title="Subscription status unavailable" message="Unable to refresh subscription status. Your access will be verified when you use protected features." /></div><BottomNav /></main>
+  if (!state) {
+    return (
+      <div style={{ padding: 20 }}>
+        <PageHeader title="No subscription found" />
+        <div style={{ marginTop: 20, textAlign: 'center' }}>
+          <p>You don't have an active subscription.</p>
+          <UpgradePrompt
+            title="Start your subscription"
+            message="Choose a plan to access all features"
+            suggestedPlan="premium"
+            context="feature_locked"
+          />
+        </div>
+        <BottomNav />
+      </div>
+    )
+  }
 
   return (
-    <main style={{ minHeight: '100dvh', background: 'var(--surface)', paddingBottom: 112 }}>
-      <PageHeader title="Manage subscription" subtitle="Your billing access and status" href="/subscription" />
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 16px' }}>
-        <SubscriptionStatusCard state={subscription.state} managementUrl={revenueCat.customerInfo?.managementURL} onRefresh={refreshStatus} refreshing={refreshing} />
-        <div style={{ marginTop: 14 }}><AIUsageMeter /></div>
-        {restoreMessage && <p role="status" aria-live="polite" style={{ marginTop: 12, color: 'var(--muted)', fontSize: 13 }}>{restoreMessage}</p>}
-        {revenueCat.configured && revenueCat.initialized && <button type="button" onClick={() => void restorePurchases()} disabled={refreshing} aria-busy={refreshing} style={{ marginTop: 14, width: '100%', padding: '12px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-2)', fontWeight: 700 }}>{refreshing ? 'Restoring purchases...' : 'Restore purchases'}</button>}
-        <button type="button" onClick={() => router.push('/subscription')} style={{ marginTop: 10, width: '100%', padding: '12px 14px', borderRadius: 12, border: 0, background: 'var(--primary-bg)', color: 'var(--primary)', fontWeight: 700 }}>View plans</button>
+    <>
+      <PageHeader title="Subscription Management" />
+      <div style={{ padding: 20 }}>
+        <SubscriptionStatusCard
+          state={state}
+          managementUrl="/subscription/billing-portal"
+          onRefresh={handleRefresh}
+          refreshing={isRefreshing}
+        />
+
+        {/* Add some spacing */}
+        <div style={{ height: 24 }}></div>
+
+        <AIUsageMeter compact={false} />
+
+        {/* Add some spacing */}
+        <div style={{ height: 24 }}></div>
+
+        {/* Upgrade prompt for free users or those with limits */}
+        {(state.currentPlan === 'free' ||
+          (state.subscriptionStatus === 'active' && state.aiLimit !== null)) && (
+          <UpgradePrompt
+            title="Unlock more features"
+            message="Upgrade your plan to access premium features and higher limits"
+            suggestedPlan="premium"
+            context="feature_locked"
+          />
+        )}
       </div>
+
       <BottomNav />
-    </main>
+    </>
   )
 }

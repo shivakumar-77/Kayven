@@ -45,6 +45,16 @@ const BASE_ENTITLEMENTS: Entitlements = {
   health_insights: false,
 }
 
+const BASIC_ENTITLEMENTS: Entitlements = {
+  ...BASE_ENTITLEMENTS,
+}
+
+const STANDARD_ENTITLEMENTS: Entitlements = {
+  ...BASE_ENTITLEMENTS,
+  advanced_meal_planning: true,
+  advanced_progress: true,
+}
+
 const PREMIUM_ENTITLEMENTS: Entitlements = {
   ...BASE_ENTITLEMENTS,
   advanced_meal_planning: true,
@@ -60,6 +70,8 @@ const PRO_ENTITLEMENTS: Entitlements = {
 
 export function getPlanEntitlements(planId: PlanId): Entitlements {
   if (planId === 'free') return { ...BASE_ENTITLEMENTS }
+  if (planId === 'basic') return { ...BASIC_ENTITLEMENTS }
+  if (planId === 'standard') return { ...STANDARD_ENTITLEMENTS }
   if (planId === 'premium') return { ...PREMIUM_ENTITLEMENTS }
   return { ...PRO_ENTITLEMENTS }
 }

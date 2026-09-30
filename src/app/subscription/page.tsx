@@ -10,9 +10,9 @@ import UpgradePrompt from '@/components/UpgradePrompt'
 import { refreshSubscription, useSubscription } from '@/lib/billing/client'
 import { ENTITLEMENT_DEFINITIONS, canUseFeature, getPlanEntitlements } from '@/lib/billing/entitlements'
 import { PLANS, type PlanId } from '@/lib/billing/plans'
-import { getPublicProductPlan, useRevenueCat } from '@/lib/billing/revenuecat-client'
+import { getRazorpayPlanConfig, type RazorpayPlanConfig, type BillingPeriod } from '@/lib/billing/razorpay-config'
 
-const PLAN_ORDER: PlanId[] = ['free', 'premium', 'pro']
+const PLAN_ORDER: PlanId[] = ['free', 'basic', 'standard', 'pro']
 
 function formatDate(value: string | null | undefined): string | null {
   if (!value) return null
@@ -23,21 +23,19 @@ function formatDate(value: string | null | undefined): string | null {
 export default function SubscriptionPage() {
   const router = useRouter()
   const { state, loading, error } = useSubscription()
-  const revenueCat = useRevenueCat()
-  const [actionState, setActionState] = useState<'idle' | 'purchasing' | 'restoring' | 'syncing' | 'success' | 'empty' | 'error'>('idle')
+  const [actionState, setActionState] = useState<'idle' | 'purchasing' | 'success' | 'error' | 'syncing'>('idle')
   const [actionMessage, setActionMessage] = useState('')
 
   if (loading) {
     return <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}><PageHeader title="Plans" href="/dashboard" /><div style={{ maxWidth: 900, margin: '0 auto', padding: 20, color: 'var(--muted)' }}>Loading your plan...</div><BottomNav /></main>
   }
 
-  if (!state) {
+  if (error || !state) {
     return <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}><PageHeader title="Plans" href="/dashboard" /><div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}><UpgradePrompt title="Plans are unavailable" message="We could not load your subscription state. Please try again later." /></div><BottomNav /></main>
   }
 
   const currentPlan = PLANS[state.currentPlan] || PLANS.free
   const periodEnd = formatDate(state.currentPeriodEnd)
-  const configuredPackages = revenueCat.offering?.availablePackages.filter(pkg => getPublicProductPlan(pkg.webBillingProduct.identifier)) || []
   const statusLabel = state.cancelAtPeriodEnd && state.subscriptionStatus === 'active'
     ? 'Canceling at period end'
     : state.subscriptionStatus === 'trialing'
@@ -70,16 +68,17 @@ export default function SubscriptionPage() {
           <RazorpayCheckout amount={100} description="KAYVEN test payment" label="Pay ₹1 with Razorpay" />
         </section>
 
-        {revenueCat.configured && revenueCat.initialized && <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}><button type="button" onClick={async () => { if (actionState === 'restoring') return; setActionState('restoring'); setActionMessage('Restoring purchases...'); try { const restored = await revenueCat.restore(); const refreshed = await refreshSubscription(); if (refreshed.currentPlan !== 'free') { setActionState('success'); setActionMessage('Purchase restored. Your subscription is active.') } else if (!restored.customerInfo?.entitlements.active || Object.keys(restored.customerInfo.entitlements.active).length === 0) { setActionState('empty'); setActionMessage('No active subscription was found.') } else { setActionState('syncing'); setActionMessage("Purchase restored. We're syncing your subscription...") } } catch { setActionState('error'); setActionMessage('We could not restore purchases. Please try again.') } }} disabled={actionState === 'restoring'} aria-busy={actionState === 'restoring'} style={{ padding: '10px 13px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-2)', fontWeight: 700 }}>{actionState === 'restoring' ? 'Restoring purchases...' : 'Restore purchases'}</button></div>}
-        {actionMessage && <p role="status" aria-live="polite" style={{ marginTop: 10, color: actionState === 'error' ? 'var(--red)' : 'var(--muted)', fontSize: 13 }}>{actionMessage}</p>}
-
         <section style={{ marginTop: 26 }}>
-          <div style={{ marginBottom: 12 }}><h2 style={{ fontSize: 20 }}>Choose your level</h2><p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{revenueCat.configured && configuredPackages.length ? 'Live plans from RevenueCat are available below.' : 'Subscriptions are coming soon. Your current access remains active.'}</p></div>
-          {revenueCat.error && <p role="status" style={{ marginBottom: 12, color: 'var(--muted)', fontSize: 13 }}>{revenueCat.error}</p>}
+          <div style={{ marginBottom: 12 }}><h2 style={{ fontSize: 20 }}>Choose your level</h2><p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>Select a plan below to upgrade or downgrade your subscription.</p></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: 12 }}>
             {PLAN_ORDER.map(planId => {
               const plan = PLANS[planId]
               const entitlements = planId === state.currentPlan ? state.entitlements : getPlanEntitlements(planId)
+              const razorpayConfig = getRazorpayPlanConfig(planId as PlanId, 'monthly' as BillingPeriod)
+              const priceDisplay = razorpayConfig ? `₹${razorpayConfig.offerPrice.toLocaleString()}/month` : 'Coming soon'
+              const originalPrice = razorpayConfig ? razorpayConfig.mrp : null
+              const discountPercent = razorpayConfig && originalPrice ? Math.round(((originalPrice - razorpayConfig.offerPrice) / originalPrice) * 100) : 0
+              
               return <article key={plan.id} style={{ position: 'relative', padding: 18, borderRadius: 18, background: 'var(--card)', border: plan.id === state.currentPlan ? '2px solid var(--primary)' : '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 {plan.id === state.currentPlan && <span style={{ position: 'absolute', right: 14, top: 14, color: 'var(--primary)', fontSize: 11, fontWeight: 800 }}>CURRENT</span>}
                 <h3 style={{ fontSize: 18 }}>{plan.displayName}</h3><p style={{ marginTop: 6, minHeight: 42, color: 'var(--muted)', fontSize: 13, lineHeight: 1.4 }}>{plan.description}</p>
@@ -91,30 +90,111 @@ export default function SubscriptionPage() {
                     return <li key={feature} style={{ display: 'flex', gap: 8, alignItems: 'start', fontSize: 12, color: enabled ? 'var(--text-2)' : 'var(--muted)' }}><span aria-hidden="true" style={{ color: enabled ? 'var(--green)' : 'var(--muted)' }}>{enabled ? '✓' : '○'}</span><span>{definition.label}{definition.availability === 'coming_soon' ? ' · Coming soon' : ''}</span></li>
                   })}
                 </ul>
-                {plan.id !== state.currentPlan && (() => {
-                  const planPackage = configuredPackages.find(pkg => getPublicProductPlan(pkg.webBillingProduct.identifier) === plan.id)
-                  const price = planPackage?.webBillingProduct.price?.formattedPrice
-                  const purchasing = revenueCat.loading
+                {plan.id !== state.currentPlan && razorpayConfig && (() => {
+                  const purchasing = actionState === 'purchasing'
                   return <button type="button" onClick={async () => {
-                    if (!planPackage) return
                     if (actionState === 'purchasing' || actionState === 'syncing') return
                     setActionState('purchasing')
-                    setActionMessage('Purchase received. We\'re syncing your subscription...')
+                    setActionMessage('Payment initiated. Please complete the payment...')
                     try {
-                      await revenueCat.purchase(planPackage)
-                      const refreshed = await refreshSubscription()
-                      if (refreshed.currentPlan === plan.id) {
-                        setActionState('success')
-                        setActionMessage(`${plan.displayName} access is active.`)
-                      } else {
-                        setActionState('syncing')
-                        setActionMessage("Purchase received. We're waiting for subscription sync.")
+                      // Create Razorpay order for subscription
+                      const response = await fetch('/api/create-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          plan_id: planId,
+                          period: 'monthly'
+                        })
+                      })
+                      
+                      if (!response.ok) {
+                        throw new Error('Failed to create payment order')
                       }
-                    } catch {
+                      
+                      const orderData = await response.json()
+                      
+                      // Open Razorpay checkout
+                      await new Promise<void>((resolve, reject) => {
+                        // @ts-ignore - Razorpay is available globally
+                        const razorpay = new (window as any).Razorpay({
+                          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                          amount: razorpayConfig.offerPrice * 100, // Amount in paise
+                          currency: 'INR',
+                          name: 'KAYVEN',
+                          description: `${plan.displayName} subscription`,
+                          image: '/logo.svg',
+                          order_id: orderData.id,
+                          handler: async function(response: any) {
+                            try {
+                              // Verify payment
+                              const verifyResponse = await fetch('/api/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  razorpay_payment_id: response.razorpay_payment_id,
+                                  razorpay_order_id: response.razorpay_order_id,
+                                  razorpay_signature: response.razorpay_signature,
+                                  plan_id: planId,
+                                  period: 'monthly'
+                                })
+                              })
+                              
+                              if (!verifyResponse.ok) {
+                                throw new Error('Payment verification failed')
+                              }
+                              
+                              const verifyData = await verifyResponse.json()
+                              
+                              if (verifyData.success) {
+                                // Refresh subscription status
+                                const refreshed = await refreshSubscription()
+                                if (refreshed.currentPlan === plan.id) {
+                                  setActionState('success')
+                                  setActionMessage(`${plan.displayName} access is active.`)
+                                } else {
+                                  setActionState('syncing')
+                                  setActionMessage("Payment received. We're waiting for subscription sync.")
+                                }
+                              } else {
+                                throw new Error('Payment verification failed')
+                              }
+                              resolve()
+                            } catch (error) {
+                              reject(error)
+                            }
+                          },
+                          prefill: {
+                            name: '',
+                            email: '',
+                            contact: ''
+                          },
+                          theme: {
+                            color: '#FF6600'
+                          }
+                        })
+                        
+                        razorpay.open()
+                      })
+                    } catch (error) {
+                      console.error('Payment error:', error)
                       setActionState('error')
-                      setActionMessage('The purchase was not completed. No plan changes were made.')
+                      setActionMessage('The payment was not completed. Please try again.')
                     }
-                  }} disabled={!planPackage || purchasing || actionState === 'syncing'} title={planPackage ? `Upgrade to ${plan.displayName}` : 'Billing is not available yet'} style={{ width: '100%', marginTop: 18, padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: planPackage ? 'var(--primary)' : 'var(--card2)', color: planPackage ? '#fff' : 'var(--muted)', fontWeight: 700 }}>{planPackage ? `Upgrade to ${plan.displayName}${price ? ` · ${price}` : ''}` : 'Coming soon'}</button>
+                  }} disabled={purchasing || actionState === 'syncing'} title={`Upgrade to ${plan.displayName}`} style={{ width: '100%', marginTop: 18, padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: purchasing ? 'var(--primary-bg)' : 'var(--primary)', color: purchasing ? '#fff' : '#fff', fontWeight: 700, position: 'relative' }}>
+                    {purchasing && <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4l4 4"/><path d="M12 16l-4-4 4-4"/></svg></span>} Processing...
+                    {!purchasing && (
+                      <>
+                        Upgrade to {plan.displayName}
+                        {originalPrice && discountPercent > 0 && (
+                          <>
+                            <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--green)' }}>-{discountPercent}%</span>
+                            <span style={{ marginLeft: 4, textDecoration: 'line-through', fontSize: 11, color: 'var(--muted)' }}>₹{originalPrice.toLocaleString()}</span>
+                          </>
+                        )}
+                        <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--muted)' }}>{priceDisplay}</span>
+                      </>
+                    )}
+                  </button>
                 })()}
               </article>
             })}

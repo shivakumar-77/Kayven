@@ -20,11 +20,11 @@ export function runBillingTests(): void {
   if (!canUseFeature(premium, 'advanced_meal_planning')) throw new Error('premium advanced meal planning must be enabled')
   if (!canUseFeature(pro, 'advanced_progress')) throw new Error('pro advanced progress must be enabled')
   if (canUseFeature(expired, 'advanced_progress')) throw new Error('expired subscription must resolve to Free entitlements')
-  if (requiredPlanForFeature('advanced_meal_planning') !== 'premium') throw new Error('advanced meal planning should require premium')
-  if (requiredPlanForFeature('advanced_ai_coach') !== 'pro') throw new Error('advanced AI Coach should require pro')
+  if (requiredPlanForFeature('advanced_meal_planning') as string !== 'premium') throw new Error('advanced meal planning should require premium')
+  if (requiredPlanForFeature('advanced_ai_coach') as string !== 'pro') throw new Error('advanced AI Coach should require pro')
   if (entitlementDeniedPayload({ allowed: false, state: {} as never, requiredPlan: 'pro' }).requiredPlan !== 'pro') throw new Error('structured entitlement denial is incorrect')
-  if (suggestedUpgradePlan('free') !== 'premium') throw new Error('free should suggest premium')
-  if (suggestedUpgradePlan('premium') !== 'pro') throw new Error('premium should suggest pro')
+  if (suggestedUpgradePlan('free') as string !== 'premium') throw new Error('free should suggest premium')
+  if (suggestedUpgradePlan('premium') as string !== 'pro') throw new Error('premium should suggest pro')
   if (suggestedUpgradePlan('pro') !== null) throw new Error('pro should not suggest a higher plan')
 
   if (isDevelopmentOverrideAllowed('test-user', 'production', 'pro', 'test-user')) {

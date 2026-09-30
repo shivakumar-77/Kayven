@@ -126,7 +126,7 @@ create table if not exists subscriptions (
   provider text not null,
   provider_customer_id text,
   provider_subscription_id text,
-  plan_id text not null default 'free' check (plan_id in ('free', 'premium', 'pro')),
+  plan_id text not null default 'free' check (plan_id in ('free', 'basic', 'standard', 'premium', 'pro')),
   status text not null check (status in ('active', 'trialing', 'past_due', 'canceled', 'expired')),
   current_period_start timestamptz,
   current_period_end timestamptz,
@@ -153,7 +153,7 @@ alter table subscriptions
 
 alter table subscriptions
   add constraint subscriptions_plan_id_check
-  check (plan_id in ('free', 'premium', 'pro'));
+  check (plan_id in ('free', 'basic', 'standard', 'premium', 'pro'));
 
 create table if not exists ai_usage (
   id uuid default gen_random_uuid() primary key,

@@ -1,7 +1,7 @@
 import type { PlanId } from './plans'
 import type { SubscriptionStatus, UserSubscription } from './server'
 
-export type BillingProviderName = 'revenuecat' | 'apple' | 'google_play' | 'web'
+export type BillingProviderName = 'revenuecat' | 'apple' | 'google_play' | 'web' | 'razorpay'
 
 export interface ProviderSubscriptionState {
   provider: BillingProviderName

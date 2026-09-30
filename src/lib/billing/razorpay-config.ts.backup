@@ -1,0 +1,139 @@
+import type { PlanId } from './plans'
+
+export type BillingPeriod = 'monthly' | 'yearly'
+
+export interface RazorpayPlanConfig {
+  planId: PlanId
+  displayName: string
+  billingPeriod: BillingPeriod
+  mrp: number // in INR
+  discountAmount: number // in INR
+  offerPrice: number // in INR
+  displayDiscountPercentage: number
+  currency: 'INR'
+  razorpaySubscriptionLink: string
+}
+
+// Validate pricing calculations
+export function validateRazorpayPlanConfig(config: RazorpayPlanConfig): boolean {
+  const calculatedOfferPrice = config.mrp - config.discountAmount
+  const calculatedDiscountPercentage = Math.round((config.discountAmount / config.mrp) * 100)
+
+  return config.offerPrice === calculatedOfferPrice &&
+         config.displayDiscountPercentage === calculatedDiscountPercentage
+}
+
+// Canonical KAYVEN pricing configuration
+export const RAZORPAY_PLANS: Record<`${PlanId}-${BillingPeriod}`, RazorpayPlanConfig> = {
+  // Monthly plans
+  'free-monthly': {
+    planId: 'free',
+    displayName: 'Free',
+    billingPeriod: 'monthly',
+    mrp: 0,
+    discountAmount: 0,
+    offerPrice: 0,
+    displayDiscountPercentage: 0,
+    currency: 'INR',
+    razorpaySubscriptionLink: '' // Free plan doesn't need Razorpay link
+  },
+  'basic-monthly': {
+    planId: 'basic',
+    displayName: 'Basic',
+    billingPeriod: 'monthly',
+    mrp: 499,
+    discountAmount: 200,
+    offerPrice: 299,
+    displayDiscountPercentage: 40,
+    currency: 'INR',
+    razorpaySubscriptionLink: 'https://rzp.io/rzp/XFnNNi6V'
+  },
+  'standard-monthly': {
+    planId: 'standard',
+    displayName: 'Standard',
+    billingPeriod: 'monthly',
+    mrp: 799,
+    discountAmount: 300,
+    offerPrice: 499,
+    displayDiscountPercentage: 38,
+    currency: 'INR',
+    razorpaySubscriptionLink: 'https://rzp.io/rzp/QLHMTsIP'
+  },
+  'pro-monthly': {
+    planId: 'pro',
+    displayName: 'Pro AI',
+    billingPeriod: 'monthly',
+    mrp: 1999,
+    discountAmount: 600,
+    offerPrice: 1399,
+    displayDiscountPercentage: 30,
+    currency: 'INR',
+    razorpaySubscriptionLink: 'https://rzp.io/rzp/Sn62QBB'
+  },
+  // Yearly plans
+  'free-yearly': {
+    planId: 'free',
+    displayName: 'Free',
+    billingPeriod: 'yearly',
+    mrp: 0,
+    discountAmount: 0,
+    offerPrice: 0,
+    displayDiscountPercentage: 0,
+    currency: 'INR',
+    razorpaySubscriptionLink: '' // Free plan doesn't need Razorpay link
+  },
+  'basic-yearly': {
+    planId: 'basic',
+    displayName: 'Basic',
+    billingPeriod: 'yearly',
+    mrp: 3999,
+    discountAmount: 1700,
+    offerPrice: 2299,
+    displayDiscountPercentage: 43,
+    currency: 'INR',
+    razorpaySubscriptionLink: 'https://rzp.io/rzp/v6Uhwes'
+  },
+  'standard-yearly': {
+    planId: 'standard',
+    displayName: 'Standard',
+    billingPeriod: 'yearly',
+    mrp: 6499,
+    discountAmount: 2600,
+    offerPrice: 3899,
+    displayDiscountPercentage: 40,
+    currency: 'INR',
+    razorpaySubscriptionLink: 'https://rzp.io/rzp/sHzyIbN'
+  },
+  'pro-yearly': {
+    planId: 'pro',
+    displayName: 'Pro AI',
+    billingPeriod: 'yearly',
+    mrp: 15499,
+    discountAmount: 4600,
+    offerPrice: 10899,
+    displayDiscountPercentage: 30,
+    currency: 'INR',
+    razorpaySubscriptionLink: 'https://rzp.io/rzp/zpf9JhW'
+  }
+} as const
+
+// Helper functions
+export function getRazorpayPlanConfig(planId: PlanId, billingPeriod: BillingPeriod): RazorpayPlanConfig | undefined {
+  return RAZORPAY_PLANS[`${planId}-${billingPeriod}` as `${PlanId}-${BillingPeriod}`]
+}
+
+export function getRazorpayLink(planId: PlanId, billingPeriod: BillingPeriod): string | undefined {
+  const config = getRazorpayPlanConfig(planId, billingPeriod)
+  return config?.razorpaySubscriptionLink
+}
+
+export function validateAllPricingConfigs(): boolean {
+  return Object.values(RAZORPAY_PLANS).every(validateRazorpayPlanConfig)
+}
+
+// Ensure all configs are valid at import time
+if (!validateAllPricingConfigs()) {
+  throw new Error('Invalid Razorpay pricing configuration detected')
+}
+  "premium-monthly": { planId: "premium", displayName: "Premium", billingPeriod: "monthly", mrp: 799, discountAmount: 200, offerPrice: 599, displayDiscountPercentage: 25, currency: "INR", razorpaySubscriptionLink: "" },
+  "premium-yearly": { planId: "premium", displayName: "Premium", billingPeriod: "yearly", mrp: 7990, discountAmount: 2000, offerPrice: 5990, displayDiscountPercentage: 25, currency: "INR", razorpaySubscriptionLink: "" },
