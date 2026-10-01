@@ -1,0 +1,513 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import BottomNav from '../../components/BottomNav'
+import PageHeader from '../../components/PageHeader'
+import AIUsageMeter from '../../components/AIUsageMeter'
+import { useSubscription } from '../../../lib/billing/client'
+import { getRazorpayPlanConfig, type RazorpayPlanConfig, type BillingPeriod } from '../../../lib/billing/razorpay-config'
+import { PLANS, type PlanId } from '../../../lib/billing/plans'
+import { ENTITLEMENT_DEFINITIONS, canUseFeature } from '../../../lib/billing/entitlements'
+
+const PLAN_ORDER: PlanId[] = ['basic', 'standard', 'pro']
+
+export default function SubscriptionPage() {
+  const router = useRouter()
+  const { state, loading, error } = useSubscription()
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
+
+  // Handle billing period change
+  const handleBillingPeriodChange = (period: BillingPeriod) => {
+    setBillingPeriod(period)
+  }
+
+  if (loading) {
+    return (
+      <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}>
+        <PageHeader title="Plans" href="/dashboard" />
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: 20, color: 'var(--muted)' }}>
+          Loading your plan...
+        </div>
+        <BottomNav />
+      </main>
+    )
+  }
+
+  if (error || !state) {
+    return (
+      <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}>
+        <PageHeader title="Plans" href="/dashboard" />
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}>
+          <p>We could not load your subscription state. Please try again later.</p>
+        </div>
+        <BottomNav />
+      </main>
+    )
+  }
+
+  const currentPlanId = state.currentPlan as PlanId
+  const currentPlan = PLANS[currentPlanId] || PLANS.free
+
+  return (
+    <main style={{ minHeight: '100dvh', background: 'var(--surface)', paddingBottom: 112 }}>
+      <PageHeader
+        title="KAYVEN Plans"
+        subtitle="Your access, clearly explained"
+        href="/dashboard"
+      />
+
+      {/* Hero Section */}
+      <section style={{
+        maxWidth: 900,
+        margin: '0 auto',
+        padding: '24px 16px 32px',
+        textAlign: 'center'
+      }}>
+        <h1 style={{
+          fontSize: 28,
+          fontWeight: 700,
+          marginBottom: 16,
+          background: 'linear-gradient(to right, var(--primary), var(--primary-light))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          Better Nutrition. Stronger You.
+        </h1>
+        <p style={{
+          fontSize: 18,
+          color: 'var(--muted)',
+          marginBottom: 24,
+          maxWidth: 600,
+          marginLeft: 'auto',
+          marginRight: 'auto'
+        }}>
+          Get personalized meal plans, workouts, and AI coaching — all in one place.
+        </p>
+        <p style={{
+          fontSize: 16,
+          color: 'var(--muted)',
+          marginBottom: 24
+        }}>
+          Choose the plan that fits your goals.
+        </p>
+
+        {/* Billing Period Toggle */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 12,
+          background: 'var(--card)',
+          padding: '8px',
+          borderRadius: 12,
+          border: '1px solid var(--border)'
+        }}>
+          <button
+            type="button"
+            onClick={() => handleBillingPeriodChange('monthly')}
+            active={billingPeriod === 'monthly'}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: 8,
+              border: 'none',
+              background: billingPeriod === 'monthly' ? 'var(--primary)' : 'transparent',
+              color: billingPeriod === 'monthly' ? '#fff' : 'var(--text-2)',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Monthly
+          </button>
+          <span style={{
+            width: 1px,
+            height: 20,
+            background: 'var(--border)'
+          }} />
+          <button
+            type="button"
+            onClick={() => handleBillingPeriodChange('yearly')}
+            active={billingPeriod === 'yearly'}
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              borderRadius: 8,
+              border: 'none',
+              background: billingPeriod === 'yearly' ? 'var(--primary)' : 'transparent',
+              color: billingPeriod === 'yearly' ? '#fff' : 'var(--text-2)',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Yearly
+            <span style={{
+              marginLeft: 6,
+              fontSize: 12,
+              color: 'var(--green)'
+            }}>
+              Save up to 43%
+            </span>
+          </button>
+        </div>
+      </section>
+
+      {/* Current Subscription State (if subscribed) */}
+      {currentPlanId !== 'free' && (
+        <section style={{
+          maxWidth: 900,
+          margin: '0 auto 24px',
+          padding: '20px 16px',
+          background: 'var(--card)',
+          borderRadius: 16,
+          border: '1px solid var(--border)'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <h2 style={{
+                fontSize: 20,
+                fontWeight: 600,
+                marginBottom: 4
+              }}>
+                Current Plan
+              </h2>
+              <p style={{
+                color: 'var(--muted)',
+                fontSize: 14
+              }}>
+                {currentPlan.displayName} • {state.subscriptionStatus === 'active' ? 'Active' : state.subscriptionStatus}
+              </p>
+            </div>
+            {state.currentPeriodEnd && (
+              <div style={{
+                textAlign: 'right',
+                fontSize: 14,
+                color: 'var(--muted)'
+              }}>
+                Renews {new Date(state.currentPeriodEnd).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Plans Section */}
+      <section style={{
+        maxWidth: 900,
+        margin: '0 auto',
+        padding: '0 16px',
+        paddingBottom: 24
+      }}>
+        {/* Desktop: Side-by-side cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: 20,
+          marginBottom: 24
+        }}>
+          {PLAN_ORDER.map((planId) => {
+            const plan = PLANS[planId]
+            const razorpayConfig = getRazorpayPlanConfig(planId, billingPeriod)
+
+            // Skip if no Razorpay config (free plan or invalid)
+            if (!razorpayConfig) return null
+
+            const isMostPopular = planId === 'standard'
+            const isCurrent = planId === currentPlanId
+
+            // Get entitlements for this plan
+            const planEntitlements = getPlanEntitlements(planId as PlanId)
+
+            // Define plan features based on actual entitlements
+            const planFeatures = []
+
+            // Basic features (available in all paid plans)
+            if (canUseFeature(planEntitlements, 'food_tracking')) {
+              planFeatures.push({ label: 'Food tracking', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'basic_insights')) {
+              planFeatures.push({ label: 'Basic nutrition insights', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'ai_coach')) {
+              planFeatures.push({ label: 'AI Coach', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'meal_planning')) {
+              planFeatures.push({ label: 'Meal planning', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'supplements')) {
+              planFeatures.push({ label: 'Supplements', available: true })
+            }
+
+            // Standard+ features
+            if (canUseFeature(planEntitlements, 'advanced_meal_planning')) {
+              planFeatures.push({ label: 'Advanced meal planning', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'advanced_progress')) {
+              planFeatures.push({ label: 'Advanced progress', available: true })
+            }
+
+            // Pro AI features
+            if (canUseFeature(planEntitlements, 'advanced_ai_coach')) {
+              planFeatures.push({ label: 'Advanced AI Coach', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'workout_planning')) {
+              planFeatures.push({ label: 'Workout planning', available: true })
+            }
+            if (canUseFeature(planEntitlements, 'health_insights')) {
+              planFeatures.push({ label: 'Health intelligence', available: true })
+            }
+
+            return (
+              <article
+                key={planId}
+                style={{
+                  padding: '24px',
+                  borderRadius: '16px',
+                  background: 'var(--card)',
+                  border: isCurrent ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  boxShadow: 'var(--shadow-sm)',
+                  position: 'relative'
+                }}
+              >
+                {isMostPopular && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    background: 'var(--green)',
+                    color: '#fff',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '600'
+                  }}>
+                    Most Popular
+                  </div>
+                )}
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'start',
+                  marginBottom: '16px'
+                }}>
+                  <h3 style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    margin: '0'
+                  }}>
+                    {plan.displayName}
+                  </h3>
+                  {isCurrent && (
+                    <div style={{
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }}>
+                      CURRENT
+                    </div>
+                  )}
+                </div>
+
+                <p style={{
+                  color: 'var(--muted)',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  marginBottom: '16px'
+                }}>
+                  {plan.description}
+                </p>
+
+                {/* Pricing Section */}
+                <div style={{
+                  marginBottom: '24px'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '8px',
+                    marginBottom: '4px'
+                  }}>
+                    {razorpayConfig.mrp > 0 && (
+                      <span style={{
+                        textDecoration: 'line-through',
+                        color: 'var(--muted)',
+                        fontSize: '16px'
+                      }}>
+                        ₹{razorpayConfig.mrp.toLocaleString()}
+                      </span>
+                    )}
+                    <span style={{
+                      fontSize: '28px',
+                      fontWeight: '700',
+                      color: 'var(--primary)'
+                    }}>
+                      ₹{razorpayConfig.offerPrice.toLocaleString()}
+                    </span>
+                    <span style={{
+                      fontSize: '16px',
+                      color: 'var(--muted)'
+                    }}>
+                      {billingPeriod === 'monthly' ? '/month' : '/year'}
+                    </span>
+                  </div>
+
+                  {razorpayConfig.displayDiscountPercentage > 0 && (
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      marginTop: '4px',
+                      background: 'color-mix(in srgb, var(--green) 10%, transparent)',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600'
+                    }}>
+                      −{razorpayConfig.displayDiscountPercentage}%
+                      <span style={{
+                        marginLeft: '4px',
+                        fontSize: '12px',
+                        color: 'var(--muted)'
+                      }}>
+                        (Save ₹{(razorpayConfig.mrp - razorpayConfig.offerPrice).toLocaleString()})
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Features Section */}
+                <div style={{
+                  marginBottom: '20px'
+                }}>
+                  {planFeatures.map((feature, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        color: feature.available ? 'var(--text-2)' : 'var(--muted)'
+                      }}
+                    >
+                      {feature.available ? '✓' : '○'}
+                      <span>{feature.label}</span>
+                      {!feature.available && (
+                        <span style={{
+                          marginLeft: '4px',
+                          fontSize: '12px',
+                          color: 'var(--muted)'
+                        }}>
+                          · Coming soon
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* AI Requests Section */}
+                <div style={{
+                  marginBottom: '20px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid color-mix(in srgb, var(--border) 20%, transparent)',
+                  fontSize: '14px',
+                  color: 'var(--muted)'
+                }}>
+                  {plan.aiRequestsPerPeriod === null
+                    ? 'Unlimited AI requests'
+                    : `${plan.aiRequestsPerPeriod} AI requests / ${billingPeriod === 'monthly' ? 'month' : 'year'}`}
+                </div>
+
+                {/* CTA Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = razorpayConfig.razorpaySubscriptionLink
+                    if (link) {
+                      window.open(link, '_blank', 'noopener')
+                    }
+                  }}
+                  disabled={!razorpayConfig.razorpaySubscriptionLink}
+                  style={{
+                    width: '100%',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: !razorpayConfig.razorpaySubscriptionLink
+                      ? 'color-mix(in srgb, var(--border) 30%, transparent)'
+                      : 'var(--primary)',
+                    color: !razorpayConfig.razorpaySubscriptionLink
+                      ? 'var(--muted)'
+                      : '#fff',
+                    fontWeight: '600',
+                    fontSize: '16px',
+                    cursor: !razorpayConfig.razorpaySubscriptionLink
+                      ? 'not-allowed'
+                      : 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {razorpayConfig.razorpaySubscriptionLink ?
+                    'Get Started →' :
+                    'Coming soon'
+                  }
+                </button>
+              </article>
+            })}
+          </div>
+        </div>
+
+        {/* Mobile: Horizontal scrollable cards notice */}
+        <div style={{
+          textAlign: 'center',
+          marginTop: '16px',
+          color: 'var(--muted)',
+          fontSize: '14px'
+        }}>
+          <p>Swipe left/right to see all plans</p>
+          <div style={{
+            height: 4,
+            background: 'linear-gradient(to right, transparent, var(--muted), transparent)',
+            marginTop: '4px'
+          }} />
+        </div>
+      </section>
+
+      {/* Billing Disclosure */}
+      <section style={{
+        maxWidth: 900,
+        margin: '24px auto 0',
+        padding: '16px 20px',
+        textAlign: 'center',
+        fontSize: '14px',
+        color: 'var(--muted)'
+      }}>
+        <p>
+          Subscriptions are billed through Razorpay. Paid plans renew according to the selected
+          billing period unless cancelled. <a href="/terms" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Terms</a> |
+          <a href="/privacy" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Privacy</a> |
+          <a href="/refund" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Refund</a> |
+          <a href="/cancellation" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Cancellation</a>
+        </p>
+      </section>
+    </main>
+
+    <BottomNav />
+  )
+}

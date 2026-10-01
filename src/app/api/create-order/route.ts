@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { amount, currency = 'INR', receipt } = await request.json()
+    const { amount, currency, receipt } = await request.json()
     const normalizedAmount = Number(amount)
-    const normalizedCurrency = String(currency).toUpperCase()
+    const normalizedCurrency = currency ? String(currency).toUpperCase() : 'INR'
 
     if (!Number.isSafeInteger(normalizedAmount) || normalizedAmount < MINIMUM_AMOUNT_PAISE) {
       return NextResponse.json({ error: `Amount must be at least ${MINIMUM_AMOUNT_PAISE} paise.` }, { status: 400 })

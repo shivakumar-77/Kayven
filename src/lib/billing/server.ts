@@ -111,7 +111,7 @@ export async function getUserSubscription(supabase: any, userId: string): Promis
   }
 
   const { data, error } = await supabase
-    .from('user_subscriptions')
+    .from('subscriptions')
     .select('*')
     .eq('user_id', userId)
     .single()
@@ -229,9 +229,17 @@ export async function requireEntitlement(supabase: any, userId: string, feature:
   }
 }
 
-export async function getBillingState(supabase: any, userId: string): Promise<BillingState | null> {
+export async function getBillingState(supabase: any, userId: string): Promise<BillingState> {
   const subscription = await getUserSubscription(supabase, userId)
-  if (!subscription) return null
+  if (!subscription) {
+    return {
+      subscription: null,
+      plan: getPlanConfig('free'),
+      entitlements: getUserEntitlements({ plan_id: 'free', status: 'active' }),
+      usage: freeUsage(userId),
+      aiLimit: 0,
+    }
+  }
 
   const plan = getPlanConfig(subscription.plan_id)
   const entitlements = getUserEntitlements(subscription)

@@ -33,7 +33,7 @@ Respond ONLY with this JSON, no markdown:
           ]
         }]
       }),
-      signal: AbortSignal.timeout(60000)
+      signal: (() => { const controller = new AbortController(); setTimeout(() => controller.abort(), 60000); return controller.signal; })()
     })
 
     if (!response.ok) {

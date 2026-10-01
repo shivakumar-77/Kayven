@@ -1,0 +1,154 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import BottomNav from '../../components/BottomNav'
+import PageHeader from '../../components/PageHeader'
+import AIUsageMeter from '../../components/AIUsageMeter'
+import { useSubscription } from '../../lib/billing/client'
+import { getRazorpayPlanConfig, type RazorpayPlanConfig, type BillingPeriod } from '../../lib/billing/razorpay-config'
+import { PLANS, type PlanId } from '../../lib/billing/plans'
+
+const PLAN_ORDER: PlanId[] = ['basic', 'standard', 'pro']
+
+export default function SubscriptionPage() {
+  const router = useRouter()
+  const { state, loading, error } = useSubscription()
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
+
+  // Handle billing period change
+  const handleBillingPeriodChange = (period: BillingPeriod) => {
+    setBillingPeriod(period)
+  }
+
+  if (loading) {
+    return (
+      <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}>
+        <PageHeader title="Plans" href="/dashboard" />
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: 20, color: 'var(--muted)' }}>
+          Loading your plan...
+        </div>
+        <BottomNav />
+      </main>
+    )
+  }
+
+  if (error || !state) {
+    return (
+      <main style={{ minHeight: '100dvh', background: 'var(--surface)' }}>
+        <PageHeader title="Plans" href="/dashboard" />
+        <div style={{ maxWidth: 900, margin: '0 auto', padding: 20 }}>
+          <p>We could not load your subscription state. Please try again later.</p>
+        </div>
+        <BottomNav />
+      </main>
+    )
+  }
+
+  const currentPlanId = state.currentPlan as PlanId
+  const currentPlan = PLANS[currentPlanId] || PLANS.free
+
+  return (
+    <>
+      <main style={{ minHeight: '100dvh', background: 'var(--surface)', paddingBottom: 112 }}>
+        <PageHeader 
+          title="KAYVEN Plans" 
+          subtitle="Your access, clearly explained" 
+          href="/dashboard" 
+        />
+        
+        {/* Simple version - just show plans */}
+        <div style={{ 
+          maxWidth: 900, 
+          margin: '0 auto', 
+          padding: '24px 16px'
+        }}>
+          <h1>Subscription Plans</h1>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+            gap: 20,
+            marginTop: 20
+          }}>
+            {PLAN_ORDER.map((planId) => {
+              const plan = PLANS[planId]
+              const razorpayConfig = getRazorpayPlanConfig(planId, billingPeriod)
+              
+              // Skip if no Razorpay config (free plan)
+              if (!razorpayConfig) return null
+              
+              return (
+                <div 
+                  key={planId} 
+                  style={{ 
+                    padding: '24px', 
+                    borderRadius: '12px', 
+                    background: 'var(--card)', 
+                    border: '1px solid var(--border)'
+                  }}
+                >
+                  <h2>{plan.displayName}</h2>
+                  <p>{plan.description}</p>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'baseline', 
+                    gap: '8px',
+                    marginTop: '16px'
+                  }}>
+                    <span style={{ 
+                      fontSize: '24px', 
+                      fontWeight: '600',
+                      color: 'var(--primary)'
+                    }}>
+                      ₹{razorpayConfig.offerPrice.toLocaleString()}
+                    </span>
+                    <span style={{ 
+                      fontSize: '16px', 
+                      color: 'var(--muted)'
+                    }}>
+                      {billingPeriod === 'monthly' ? '/month' : '/year'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = razorpayConfig.razorpaySubscriptionLink
+                      if (link) {
+                        window.open(link, '_blank', 'noopener')
+                      }
+                    }}
+                    disabled={!razorpayConfig.razorpaySubscriptionLink}
+                    style={{ 
+                      width: '100%', 
+                      padding: '12px', 
+                      marginTop: '16px',
+                      borderRadius: '8px', 
+                      border: 'none', 
+                      background: !razorpayConfig.razorpaySubscriptionLink 
+                        ? 'color-mix(in srgb, var(--border) 30%, transparent)' 
+                        : 'var(--primary)', 
+                      color: !razorpayConfig.razorpaySubscriptionLink 
+                        ? 'var(--muted)' 
+                        : '#fff', 
+                      fontWeight: '600',
+                      cursor: !razorpayConfig.razorpaySubscriptionLink 
+                        ? 'not-allowed' 
+                        : 'pointer'
+                    }}
+                  >
+                    {razorpayConfig.razorpaySubscriptionLink ? 
+                      'Select Plan' : 
+                      'Coming soon'
+                    }
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </main>
+      
+      <BottomNav />
+    </>
+  )
+}
