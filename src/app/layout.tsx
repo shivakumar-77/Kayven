@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ToastProvider } from '@/components/Toast'
+import { Analytics } from '@vercel/analytics/next'
 
 export const metadata: Metadata = {
   title: 'Kayven',
@@ -57,6 +58,7 @@ window.__env = {
             {children}
           </ToastProvider>
         </ThemeProvider>
+        <Analytics />
         <script dangerouslySetInnerHTML={{ __html: `
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
