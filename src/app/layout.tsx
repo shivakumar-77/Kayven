@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { ToastProvider } from '@/components/Toast'
+import { Analytics } from '@vercel/analytics/next'
 
 export const metadata: Metadata = {
   title: 'Kayven',
@@ -63,6 +64,7 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(()=>{})
   })
 }`}}/>
+        <Analytics />
       </body>
     </html>
   )
