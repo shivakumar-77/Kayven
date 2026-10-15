@@ -3,6 +3,13 @@ import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { RevenueCatProvider } from '@/lib/billing/revenuecat'
 import { getRevenueCatConfig } from '@/lib/billing/revenuecat-config'
 import { syncSubscriptionState } from '@/lib/billing/sync'
+import { RateLimiterMemory } from 'rate-limiter-flexible'
+
+// Rate limiter for subscription refresh: 2 requests per 10 seconds per IP
+const subscriptionRefreshRateLimiter = new RateLimiterMemory({
+  points: 2, // 2 requests
+  duration: 10, // per 10 seconds
+})
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +23,14 @@ export async function POST(request: NextRequest) {
 
   if (authError || !user) {
     return NextResponse.json({ error: 'Please sign in to refresh subscription state.' }, { status: 401 })
+  }
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.socket.remoteAddress || 'anonymous'
+  try {
+    await subscriptionRefreshRateLimiter.consume(ip)
+  } catch (err) {
+    return NextResponse.json({ error: 'Too many requests, please try again later.' }, { status: 429 })
   }
 
   const config = getRevenueCatConfig()

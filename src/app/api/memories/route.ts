@@ -6,6 +6,13 @@ import {
   deactivateMemory,
   getRelevantMemories,
 } from '@/lib/server/kayven-memory'
+import { RateLimiterMemory } from 'rate-limiter-flexible'
+
+// Rate limiter for memories: 10 requests per 10 seconds per IP
+const memoriesRateLimiter = new RateLimiterMemory({
+  points: 10, // 10 requests
+  duration: 10, // per 10 seconds
+})
 
 export const dynamic = 'force-dynamic'
 
@@ -20,11 +27,19 @@ async function getAuthenticatedUser() {
   return { supabase, user }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const { supabase, user } = await getAuthenticatedUser()
 
   if (!user) {
     return NextResponse.json({ error: 'Please sign in to manage KAYVEN memory.' }, { status: 401 })
+  }
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.socket.remoteAddress || 'anonymous'
+  try {
+    await memoriesRateLimiter.consume(ip)
+  } catch (err) {
+    return NextResponse.json({ error: 'Too many requests, please try again later.' }, { status: 429 })
   }
 
   const memories = await getRelevantMemories(supabase, user.id, { limit: 50 })
@@ -36,6 +51,14 @@ export async function PATCH(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: 'Please sign in to manage KAYVEN memory.' }, { status: 401 })
+  }
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.socket.remoteAddress || 'anonymous'
+  try {
+    await memoriesRateLimiter.consume(ip)
+  } catch (err) {
+    return NextResponse.json({ error: 'Too many requests, please try again later.' }, { status: 429 })
   }
 
   const body = await request.json().catch(() => null)
@@ -56,6 +79,14 @@ export async function DELETE(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: 'Please sign in to manage KAYVEN memory.' }, { status: 401 })
+  }
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.socket.remoteAddress || 'anonymous'
+  try {
+    await memoriesRateLimiter.consume(ip)
+  } catch (err) {
+    return NextResponse.json({ error: 'Too many requests, please try again later.' }, { status: 429 })
   }
 
   const body = await request.json().catch(() => null)

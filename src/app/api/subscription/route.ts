@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { getBillingState } from '@/lib/billing/server'
+import { RateLimiterMemory } from 'rate-limiter-flexible'
+
+// Rate limiter for subscription: 5 requests per 10 seconds per IP
+const subscriptionRateLimiter = new RateLimiterMemory({
+  points: 5, // 5 requests
+  duration: 10, // per 10 seconds
+})
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +21,14 @@ export async function GET(request: NextRequest) {
 
   if (error || !user) {
     return NextResponse.json({ error: 'Please sign in to view subscription state.' }, { status: 401 })
+  }
+
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || request.socket.remoteAddress || 'anonymous'
+  try {
+    await subscriptionRateLimiter.consume(ip)
+  } catch (err) {
+    return NextResponse.json({ error: 'Too many requests, please try again later.' }, { status: 429 })
   }
 
   const state = await getBillingState(supabase, user.id)
