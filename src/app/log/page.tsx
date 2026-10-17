@@ -9,6 +9,7 @@ import { PageLoader } from '@/components/Skeleton'
 import BarcodeScanner from '@/components/BarcodeScanner'
 import { SearchIcon, CameraIcon, TagIcon, PackageIcon, EditIcon, StarIcon, ClockIcon, SaladIcon, FoodIcon, ReceiptIcon } from '@/lib/icons'
 import { FOOD_DATABASE } from '@/lib/foodDatabase'
+import { invalidateDashboardSnapshot } from '@/lib/dashboard-cache'
 
 const MEAL_TYPES = ['breakfast','lunch','dinner','snack','other']
 const todayStr = () => new Date().toISOString().slice(0,10)
@@ -167,6 +168,7 @@ export default function LogPage() {
       user_id:user.id, logged_at:todayStr(), name:src.name, qty:src.qty, unit:src.unit||'g',
       cal:src.cal, protein:src.protein, carb:src.carb, fat:src.fat, fiber:src.fiber||0, meal_type:mealType
     })
+    invalidateDashboardSnapshot(user.id)
     saveHistory({ name:src.name, cal:src.cal, protein:src.protein, carb:src.carb, fat:src.fat, fiber:src.fiber||0, unit:src.unit||'g', baseQty:src.baseQty||src.qty })
     setHistory(getHistory())
     setSaving(false)
@@ -185,6 +187,7 @@ export default function LogPage() {
       fiber:parseFloat(manual.fiber)||0, meal_type:mealType
     }
     await supabase.from('food_logs').insert(entry)
+    invalidateDashboardSnapshot(user.id)
     saveHistory({ name:entry.name, cal:entry.cal, protein:entry.protein, carb:entry.carb, fat:entry.fat, fiber:entry.fiber, unit:entry.unit, baseQty:entry.qty })
     setSaving(false); router.push('/dashboard')
   }

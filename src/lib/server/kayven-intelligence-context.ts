@@ -192,7 +192,8 @@ export async function getKayvenIntelligenceContext(
   const from = startDate(range)
   const today = getKayvenToday()
 
-  const [profileResult, foodResult, weightResult, ...optionalResults] = await Promise.all([
+  const [memories, profileResult, foodResult, weightResult, ...optionalResults] = await Promise.all([
+    getRelevantMemories(supabase, userId, { minImportance: 2, limit: 20 }),
     supabase.from('profiles').select('id,name,dob,age,gender,height,goal,cal_target,protein_target,carb_target,fat_target,fiber_target,weight_goal,water_goal,reminder_times,created_at').eq('id', userId).maybeSingle(),
     supabase.from('food_logs').select(FOOD_FIELDS).eq('user_id', userId).gte('logged_at', from).lte('logged_at', today).order('logged_at', { ascending: false }).order('created_at', { ascending: false }).limit(500),
     supabase.from('weight_logs').select(WEIGHT_FIELDS).eq('user_id', userId).gte('logged_at', from).lte('logged_at', today).order('logged_at', { ascending: true }).limit(100),
@@ -221,7 +222,6 @@ export async function getKayvenIntelligenceContext(
     id: String(log.id), date: dateOnly(log.logged_at), weightKg: numeric(log.weight_kg)
   }))
   const optional = Object.fromEntries(OPTIONAL_TABLES.map((table, index) => [table, optionalResults[index]]))
-  const memories = await getRelevantMemories(supabase, userId, { minImportance: 2, limit: 20 })
   const daily = Array.from(new Set(foodLogs.map(log => log.date))).sort().map(date => ({ date, ...summarize(foodLogs.filter(log => log.date === date)) }))
   const water = optional.water_logs?.data || []
   const workouts = optional.workout_logs?.data || []

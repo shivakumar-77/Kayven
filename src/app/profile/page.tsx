@@ -7,6 +7,7 @@ import BottomNav from '@/components/BottomNav'
 import { SettingsIcon, BellIcon, LockIcon, TargetIcon, ScaleIcon, MeasureIcon, ShareIcon, BMIIcon, CalcIcon, SunIcon, MoonIcon, AutoIcon, FireIcon, ChartDownIcon, MuscleIcon, LogoutIcon, WaterIcon, SaladIcon, TrophyIcon, CheckIcon, SunriseIcon } from '@/lib/icons'
 import { PageLoader } from '@/components/Skeleton'
 import { useTheme } from '@/components/ThemeProvider'
+import { invalidateDashboardSnapshot } from '@/lib/dashboard-cache'
 
 // ── small inline icons (kept local — not all of these exist in the shared icon set) ──
 const IconPerson = ({ size = 18, color = 'currentColor' }) => (
@@ -142,6 +143,7 @@ export default function ProfilePage() {
       water_goal: parseInt(form.water_goal) || 2000,
       photo_url: photoUrl
     }).eq('id', user.id)
+    invalidateDashboardSnapshot(user.id)
     setSaving(false)
     showMsg('Saved successfully!')
   }
@@ -153,7 +155,10 @@ export default function ProfilePage() {
       const b64 = ev.target.result
       setPhotoUrl(b64)
       const { data:{ user } } = await supabase.auth.getUser()
-      if (user) await supabase.from('profiles').update({ photo_url:b64 }).eq('id', user.id)
+      if (user) {
+        await supabase.from('profiles').update({ photo_url:b64 }).eq('id', user.id)
+        invalidateDashboardSnapshot(user.id)
+      }
       showMsg('Photo updated!')
     }
     reader.readAsDataURL(file); e.target.value=''

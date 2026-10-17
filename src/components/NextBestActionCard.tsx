@@ -1,5 +1,6 @@
 'use client'
 
+import { perfMark, perfTime, perfReport } from '@/lib/perf'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { BoltIcon, ChevronRightIcon } from '@/lib/icons'
@@ -53,6 +54,7 @@ export default function NextBestActionCard({ profile, logs, waterMl }: Props) {
   const [action, setAction] = useState<Action | null>(null)
   const [loading, setLoading] = useState(true)
   const fingerprint = JSON.stringify({
+    userId: profile?.id,
     profile: { cal: profile?.cal_target, protein: profile?.protein_target, water: profile?.water_goal },
     logs: logs.map(log => [log.id, log.cal, log.protein, log.carb, log.fat]),
     waterMl
@@ -72,10 +74,20 @@ export default function NextBestActionCard({ profile, logs, waterMl }: Props) {
         }
         const controller = new AbortController()
         const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
-        const response = await fetch('/api/health-agent', { signal: controller.signal })
-        window.clearTimeout(timeout)
-        if (!response.ok) throw new Error('Recommendation unavailable')
-        const data = await response.json()
+        perfMark('health-agent:start')
+        let data
+        try {
+          data = await perfTime('health-agent.request', async () => {
+            const response = await fetch('/api/health-agent', { signal: controller.signal })
+            if (!response.ok) throw new Error('Recommendation unavailable')
+            return response.json()
+          })
+          perfMark('health-agent:done')
+        } finally {
+          window.clearTimeout(timeout)
+          perfMark('health-agent:done')
+          perfReport('dashboard-health-agent')
+        }
         if (!cancelled) {
           const nextAction = data.state?.action || localFallback
           sessionCache.set(fingerprint, nextAction)

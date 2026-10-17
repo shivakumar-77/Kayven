@@ -5,9 +5,13 @@ import { supabase } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import NextBestActionCard from '@/components/NextBestActionCard'
 import { SkeletonDashboard, PageLoader } from '@/components/Skeleton'
-import { useToast } from '@/components/Toast'
 import { FireIcon, DropletIcon, TargetIcon, BoltIcon, ChartBarIcon, MealPlanIcon, AIIcon, ScaleIcon, CheckIcon, MuscleIcon, WarningIcon, TrophyIcon, SunriseIcon, SunIcon, MoonIcon, AppleIcon, FoodIcon, PartyIcon, SupplementIcon, RobotIcon, WaveIcon } from '@/lib/icons'
 import { useSubscription } from '@/lib/billing/client'
+import { perfMark, perfTime, perfReport, perfReset } from '@/lib/perf'
+import { invalidateDashboardSnapshot, readDashboardSnapshot, writeDashboardSnapshot } from '@/lib/dashboard-cache'
+
+// Only the profile columns this page and NextBestActionCard read
+const PROFILE_COLUMNS = 'id,name,photo_url,cal_target,protein_target,carb_target,fat_target,fiber_target,water_goal'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -134,6 +138,7 @@ export default function Dashboard() {
   const [logs, setLogs] = useState([])
   const [waterMl, setWaterMl] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState(null)
   const [sugLoading, setSugLoading] = useState(false)
   const [expanded, setExpanded] = useState(null)
@@ -141,21 +146,100 @@ export default function Dashboard() {
   const { state: subscriptionState } = useSubscription()
 
   const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.replace('/auth'); return }
-    const [{ data: prof }, { data: foodLogs }, { data: waterLogs }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', user.id).single(),
-      supabase.from('food_logs').select('*').eq('user_id', user.id).eq('logged_at', today()).order('created_at'),
-      supabase.from('water_logs').select('amount_ml').eq('user_id', user.id).eq('logged_at', today())
-    ])
-    if (prof) setProfile(prof)
-    if (foodLogs) setLogs(foodLogs)
-    if (waterLogs) setWaterMl(waterLogs.reduce((s, l) => s + l.amount_ml, 0))
-    setLoading(false)
-    if (prof && foodLogs?.length > 0) loadSuggestions(prof, foodLogs)
+    setLoadError(null)
+    perfMark('dashboard:load-start')
+    let hasCachedData = false
+    try {
+      const { data: sessionData, error: sessionError } = await perfTime(
+        'auth.getSession',
+        () => supabase.auth.getSession()
+      )
+      if (sessionError) throw sessionError
+      const userId = sessionData.session?.user.id
+      perfMark('dashboard:session-ready')
+      if (!userId) { router.replace('/auth'); return }
+
+      const day = today()
+      // Start server auth verification and all RLS-protected reads together.
+      // A user-scoped cache can render only after the server confirms this identity.
+      const authPromise = perfTime('auth.getUser', () => supabase.auth.getUser())
+      const dataPromise = Promise.all([
+        perfTime('query.profile', () => supabase.from('profiles').select(PROFILE_COLUMNS).eq('id', userId).single()),
+        perfTime('query.food_logs', () => supabase.from('food_logs').select('*').eq('user_id', userId).eq('logged_at', day).order('created_at')),
+        perfTime('query.water_logs', () => supabase.from('water_logs').select('amount_ml').eq('user_id', userId).eq('logged_at', day))
+      ]).then(
+        results => ({ results, error: null }),
+        error => ({ results: null, error })
+      )
+      const authResult = await authPromise
+      const { data: { user }, error: authError } = authResult
+      if (authError || !user || user.id !== userId) { router.replace('/auth'); return }
+      perfMark('dashboard:auth-verified')
+
+      const cached = readDashboardSnapshot(userId, day)
+      if (cached) {
+        hasCachedData = true
+        setProfile(cached.profile)
+        setLogs(cached.logs)
+        setWaterMl(cached.waterMl)
+        setLoading(false)
+        perfMark('dashboard:cache-hit')
+        perfMark('dashboard:data-ready')
+      }
+
+      const { results, error: requestError } = await dataPromise
+      if (requestError || !results) throw requestError
+      const [profileResult, foodResult, waterResult] = results
+      const queryError = profileResult.error || foodResult.error || waterResult.error
+      if (queryError) throw queryError
+
+      const prof = profileResult.data
+      const foodLogs = foodResult.data
+      const waterLogs = waterResult.data
+      const waterTotal = waterLogs?.reduce((sum, log) => sum + log.amount_ml, 0) ?? 0
+      if (prof) setProfile(prof)
+      if (foodLogs) setLogs(foodLogs)
+      setWaterMl(waterTotal)
+      if (prof) writeDashboardSnapshot(userId, day, { profile: prof, logs: foodLogs ?? [], waterMl: waterTotal })
+      setLoading(false)
+      perfMark('dashboard:data-ready')
+      if (hasCachedData) {
+        perfMark('dashboard:refresh-complete')
+        perfReport('dashboard-refresh')
+      }
+      const cacheMatchesFreshData = cached &&
+        JSON.stringify(cached.profile) === JSON.stringify(prof) &&
+        JSON.stringify(cached.logs) === JSON.stringify(foodLogs ?? []) &&
+        cached.waterMl === waterTotal
+      if (prof && foodLogs?.length > 0 && !cacheMatchesFreshData) loadSuggestions(prof, foodLogs)
+    } catch {
+      if (hasCachedData) {
+        console.warn('[Dashboard] Background refresh failed; keeping recent session data')
+      } else {
+        console.error('[Dashboard] Failed to load dashboard data')
+        setLoadError('Unable to load your dashboard data. Please try again.')
+        setLoading(false)
+      }
+    }
   }, [router])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    perfReset()
+    perfMark('dashboard:mount-start')
+    const shellFrame = requestAnimationFrame(() => perfMark('dashboard:shell-visible'))
+    load()
+    return () => cancelAnimationFrame(shellFrame)
+  }, [load])
+
+  useEffect(() => {
+    if (loading) return
+    const id = requestAnimationFrame(() => {
+      perfMark('dashboard:painted')
+      perfMark('dashboard:usable')
+      perfReport('dashboard')
+    })
+    return () => cancelAnimationFrame(id)
+  }, [loading])
 
   // new: purely visual — toggles the header's transparent -> frosted-glass state on scroll
   useEffect(() => {
@@ -168,14 +252,19 @@ export default function Dashboard() {
     setSugLoading(true)
     try {
       const totals = foodLogs.reduce((a, l) => ({ cal: a.cal+l.cal, protein: a.protein+l.protein, carb: a.carb+l.carb, fat: a.fat+l.fat }), { cal:0, protein:0, carb:0, fat:0 })
-      const res = await fetch('/api/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ totals, targets: { cal: prof.cal_target, protein: prof.protein_target, carb: prof.carb_target, fat: prof.fat_target }, logs: foodLogs })
-      })
+      perfMark('dashboard:suggestions-start')
+      const res = await perfTime('dashboard:suggestions-request', () => fetch('/api/suggestions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ totals, targets: { cal: prof.cal_target, protein: prof.protein_target, carb: prof.carb_target, fat: prof.fat_target }, logs: foodLogs })
+        }))
+      if (!res.ok) throw new Error(`Suggestions request failed (${res.status})`)
       const data = await res.json()
       if (data.result) setSuggestions(data.result)
-    } catch {} finally { setSugLoading(false) }
+      perfMark('dashboard:suggestions-done')
+    } catch {
+      console.error('[Dashboard] Suggestions request failed')
+    } finally { setSugLoading(false) }
   }
 
   const totals = logs.reduce((a, l) => ({ cal: a.cal+l.cal, protein: a.protein+l.protein, carb: a.carb+l.carb, fat: a.fat+l.fat, fiber: a.fiber+l.fiber }), { cal:0, protein:0, carb:0, fat:0, fiber:0 })
@@ -186,6 +275,7 @@ export default function Dashboard() {
   async function deleteLog(id) {
     await supabase.from('food_logs').delete().eq('id', id)
     setLogs(prev => prev.filter(l => l.id !== id))
+    if (profile?.id) invalidateDashboardSnapshot(profile.id)
   }
 
   const mealGroups = ['breakfast','lunch','dinner','snack','other']
@@ -219,7 +309,16 @@ export default function Dashboard() {
     return iconMap[meal] || null
   }
 
-  if (loading) return <SkeletonDashboard/>
+  if (loading) return <><SkeletonDashboard/><BottomNav/></>
+  if (loadError) return (
+    <div className="page-root" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
+      <div role="alert" style={{ textAlign: 'center' }}>
+        <p>{loadError}</p>
+        <button onClick={() => { setLoading(true); load() }}>Try again</button>
+      </div>
+      <BottomNav/>
+    </div>
+  )
 
   const statusConf = suggestions ? (STATUS_CONFIG[suggestions.status] || STATUS_CONFIG.on_track) : null
 

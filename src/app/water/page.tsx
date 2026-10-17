@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { invalidateDashboardSnapshot } from '@/lib/dashboard-cache'
 
 const PRESETS = [100, 150, 200, 250, 300, 350, 400, 500, 750, 1000]
 
@@ -52,6 +53,7 @@ export default function WaterPage() {
     if (!userId) return
     const today = new Date().toISOString().slice(0, 10)
     await supabase.from('water_logs').insert({ user_id: userId, logged_at: today, amount_ml: ml })
+    invalidateDashboardSnapshot(userId)
     setTodayMl(prev => prev + ml)
     setLogs(prev => [...prev, { amount_ml: ml, created_at: new Date().toISOString() }])
     setCalData(prev => ({ ...prev, [today]: (prev[today] || 0) + ml }))

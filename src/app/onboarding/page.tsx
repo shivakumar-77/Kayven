@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { ChartDownIcon, ScaleIcon, MuscleIcon, CouchIcon, WalkIcon, PlayIcon, BoltIcon } from '@/lib/icons'
+import { invalidateDashboardSnapshot } from '@/lib/dashboard-cache'
 
 const STEPS = ['goal', 'body', 'activity', 'done']
 
@@ -60,6 +61,7 @@ export default function OnboardingPage() {
       carb_target: targets.carb, fat_target: targets.fat,
       water_goal: 2500, fiber_target: 28,
     }).eq('id', user.id)
+    invalidateDashboardSnapshot(user.id)
     setSaving(false)
     router.replace('/dashboard')
   }
