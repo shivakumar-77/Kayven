@@ -25,6 +25,7 @@ export function getRevenueCatConfig(): RevenueCatConfig | null {
   for (const [productId, planId] of mappings) {
     if (productId) productIds[productId] = planId
   }
+  if (Object.keys(productIds).length === 0) return null
 
   return {
     secretApiKey,

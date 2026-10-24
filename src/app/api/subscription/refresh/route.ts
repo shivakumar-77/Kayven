@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const accessToken = authorization?.startsWith('Bearer ')
     ? authorization.slice('Bearer '.length)
     : null
-  const supabase = createSupabaseServerClient(accessToken)
+  const supabase = await createSupabaseServerClient(accessToken)
   const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken || undefined)
 
   if (authError || !user) {
@@ -20,10 +20,18 @@ export async function POST(request: NextRequest) {
 
   const config = getRevenueCatConfig()
   if (!config) {
-    return NextResponse.json({ synced: false, reason: 'Billing is not configured.' })
+    return NextResponse.json({ error: 'Subscription refresh is not configured.' }, { status: 503 })
   }
 
-  const provider = new RevenueCatProvider(config)
-  const synced = await syncSubscriptionState(supabase, user.id, provider, user.id)
-  return NextResponse.json({ synced })
+  try {
+    const provider = new RevenueCatProvider(config)
+    const synced = await syncSubscriptionState(user.id, provider, user.id)
+    if (!synced) {
+      return NextResponse.json({ error: 'Provider subscription state could not be verified.' }, { status: 502 })
+    }
+    return NextResponse.json({ synced: true })
+  } catch (error) {
+    console.error('[KAYVEN Billing] Subscription refresh failed', error)
+    return NextResponse.json({ error: 'Unable to refresh subscription state.' }, { status: 502 })
+  }
 }

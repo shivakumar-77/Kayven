@@ -24,15 +24,17 @@ export class RevenueCatProvider implements BillingProvider {
         headers: { Accept: 'application/json', Authorization: `Bearer ${this.config.secretApiKey}` },
         cache: 'no-store',
       })
+      if (response.status === 404) return null
       if (!response.ok) {
         console.error('[KAYVEN Billing] RevenueCat customer lookup failed', { status: response.status })
-        return null
+        throw new Error('RevenueCat customer lookup failed')
       }
       const payload = await response.json() as { subscriber?: RevenueCatSubscriberPayload }
-      return normalizeRevenueCatSubscriber(customerId, payload.subscriber || {}, this.config).state
-    } catch {
+      if (!payload.subscriber) throw new Error('RevenueCat returned no subscriber data')
+      return normalizeRevenueCatSubscriber(customerId, payload.subscriber, this.config).state
+    } catch (error) {
       console.error('[KAYVEN Billing] RevenueCat customer lookup failed')
-      return null
+      throw error
     }
   }
 

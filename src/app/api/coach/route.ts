@@ -24,7 +24,9 @@ import {
 } from '@/lib/server/kayven-cost-tracking'
 import { extractMemoryCandidates } from '@/lib/server/kayven-memory-extractor'
 import { processMemoryCandidates } from '@/lib/server/kayven-memory-manager'
-import { canUseAI, recordAIUsage, suggestedUpgradePlan } from '@/lib/billing/server'
+import { runMeteredAI } from '@/lib/billing/server'
+import { meteredAIFailureResponse } from '@/lib/server/ai-quota-response'
+import { isValidAIIdempotencyKey } from '@/lib/server/ai-idempotency'
 import type {
   KAYVENAIRequest,
   KAYVENAIResponse,
@@ -712,7 +714,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const {
       data: { user },
@@ -726,6 +728,10 @@ export async function POST(request: NextRequest) {
         },
         { status: 401 },
       )
+    }
+    const idempotencyKey = request.headers.get('Idempotency-Key')
+    if (!isValidAIIdempotencyKey(idempotencyKey)) {
+      return NextResponse.json({ error: 'AI_IDEMPOTENCY_KEY_REQUIRED' }, { status: 400 })
     }
 
     const conversation = await loadConversationHistory(
@@ -974,33 +980,28 @@ export async function POST(request: NextRequest) {
     }
 
     if (!kayvenResponse && safety.status !== 'escalate' && shouldPreferAIResponse(resolvedMessage, conversation)) {
-      const aiAccess = await canUseAI(supabase, user.id)
-
-      if (!aiAccess.allowed) {
-        return NextResponse.json({
-          error: 'AI_USAGE_LIMIT_REACHED',
-          message: 'You have reached your AI Coach limit for this period.',
-          upgradeRequired: true,
-          planId: aiAccess.planId,
-          aiUsage: aiAccess.usage.request_count,
-          aiLimit: aiAccess.limit,
-          suggestedPlan: suggestedUpgradePlan(aiAccess.planId),
-        }, { status: 429 })
-      }
-
-      const aiResponse = await generateKayvenAIResponse({
-        message: resolvedMessage,
-        intent,
-        context: context as unknown as Record<string, unknown>,
-        conversation: conversation as KAYVENMessage[],
-        brainDecision,
-        safetyStatus: safety.status,
+      const outcome = await runMeteredAI({
+        supabase,
+        userId: user.id,
+        feature: 'ai_coach',
+        idempotencyKey,
+        execute: async () => {
+          const aiResponse = await generateKayvenAIResponse({
+            message: resolvedMessage,
+            intent,
+            context: context as unknown as Record<string, unknown>,
+            conversation: conversation as KAYVENMessage[],
+            brainDecision,
+            safetyStatus: safety.status,
+          })
+          return { value: aiResponse, billable: aiResponse?.metadata?.usedAI === true }
+        },
       })
+      if (outcome.status !== 'ok') return meteredAIFailureResponse(outcome)
 
-      if (aiResponse) {
-        kayvenResponse = aiResponse
+      if (outcome.value) {
+        kayvenResponse = outcome.value
         executionPath = 'ai_fallback'
-        await recordAIUsage(supabase, user.id)
       }
     }
 

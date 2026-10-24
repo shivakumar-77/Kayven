@@ -8,6 +8,7 @@ import { BoltIcon, CheckIcon, ChevronRightIcon } from '@/lib/icons'
 import { supabase } from '@/lib/supabase'
 import UpgradePrompt from '@/components/UpgradePrompt'
 import AIUsageMeter from '@/components/AIUsageMeter'
+import { fetchMeteredAI } from '@/lib/client/metered-ai-fetch'
 
 type Message = { role: 'user' | 'assistant'; content: string; actions?: string[] }
 
@@ -39,7 +40,7 @@ export default function CoachPage() {
     setMessages(nextMessages)
     setLoading(true)
     try {
-      const response = await fetch('/api/coach', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: trimmed, messages, conversationId }) })
+      const response = await fetchMeteredAI('/api/coach', { message: trimmed, messages, conversationId })
       const data = await response.json()
       if (data.error === 'AI_USAGE_LIMIT_REACHED') {
         setUpgradeMessage(data.message || 'You have reached your AI Coach limit for this period.')

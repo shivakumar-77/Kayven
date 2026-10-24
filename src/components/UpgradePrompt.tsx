@@ -14,7 +14,7 @@ interface UpgradePromptProps {
 export default function UpgradePrompt({
   title = 'Unlock more with KAYVEN',
   message = 'This feature is available on a paid KAYVEN plan.',
-  suggestedPlan = 'premium',
+  suggestedPlan = 'basic',
   context = 'feature_locked',
 }: UpgradePromptProps) {
   const router = useRouter()

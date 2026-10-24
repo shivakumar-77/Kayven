@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { isMissingOnboardingSchema, safeReturnPath } from '@/lib/onboarding'
 
 export async function GET(req) {
   const { searchParams, origin } = new URL(req.url)
+  const requestedNext = safeReturnPath(searchParams.get('next'))
   const code = searchParams.get('code')
   const error = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
@@ -30,7 +32,7 @@ export async function GET(req) {
     return NextResponse.redirect(new URL(`${origin}/auth?${params.toString()}`))
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -63,9 +65,20 @@ export async function GET(req) {
     }
     
     if (data.session) {
-      console.log('[Auth Callback] ✓ Session established successfully, redirecting to dashboard')
-      // Clear any error params from URL before redirecting
-      return NextResponse.redirect(new URL(`${origin}/dashboard`))
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('onboarding_completed_at')
+        .eq('id', data.session.user.id)
+        .maybeSingle()
+      if (profileError) {
+        console.error('[Auth Callback] Profile completion check failed', { code: profileError.code || 'unknown' })
+        const errorCode = isMissingOnboardingSchema(profileError) ? 'profile_schema_missing' : 'profile_check_failed'
+        return NextResponse.redirect(new URL(`${origin}/auth?error=${errorCode}`))
+      }
+      const destination = profile?.onboarding_completed_at
+        ? (requestedNext && requestedNext !== '/onboarding' ? requestedNext : '/dashboard')
+        : `/onboarding?next=${encodeURIComponent(requestedNext && requestedNext !== '/onboarding' ? requestedNext : '/dashboard')}`
+      return NextResponse.redirect(new URL(destination, origin))
     } else {
       console.warn('[Auth Callback] Code exchanged but no session returned')
       const params = new URLSearchParams({

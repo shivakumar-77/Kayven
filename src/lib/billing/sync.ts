@@ -1,12 +1,15 @@
 import { toSubscriptionRecord, type BillingProvider } from './provider'
-import { getPlanConfig, type PlanId } from './plans'
+import type { PlanId } from './plans'
+import { createSupabaseAdminClient } from '@/lib/server/supabase-admin'
 
 export async function syncSubscriptionState(
-  supabase: any,
   userId: string,
   provider: BillingProvider,
   customerId: string,
 ): Promise<boolean> {
+  const supabase = createSupabaseAdminClient()
+  if (!supabase) throw new Error('Subscription storage is not configured')
+
   const state = await provider.getCustomerSubscriptionState(customerId)
   if (!state) {
     const { error } = await supabase
@@ -14,18 +17,40 @@ export async function syncSubscriptionState(
       .update({ plan_id: 'free', status: 'expired', updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('provider', provider.name)
-    return !error
+    if (error) {
+      console.error('Error expiring subscription:', error)
+      throw new Error('Unable to update subscription state')
+    }
+    return true
   }
 
   if (!(await provider.verifyEntitlements(state))) return false
 
   const planId = provider.mapProviderProductToPlan(state.productId || '')
-  if (!planId || !getPlanConfig(planId).id) return false
+  if (!planId) return false
 
   const subscription = toSubscriptionRecord(userId, state, planId)
-  const { error } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from('subscriptions')
-    .upsert(subscription, { onConflict: 'provider,provider_subscription_id' })
+    .select('id')
+    .eq('user_id', userId)
+    .eq('provider', provider.name)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
-  return !error
+  if (lookupError) {
+    console.error('Error locating subscription to update:', lookupError)
+    throw new Error('Unable to update subscription state')
+  }
+
+  const write = existing?.id
+    ? await supabase.from('subscriptions').update(subscription).eq('id', existing.id)
+    : await supabase.from('subscriptions').insert(subscription)
+  if (write.error) {
+    console.error('Error saving subscription state:', write.error)
+    throw new Error('Unable to update subscription state')
+  }
+
+  return true
 }

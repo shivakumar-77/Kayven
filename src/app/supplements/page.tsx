@@ -46,6 +46,7 @@ export default function SupplementsPage() {
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const [loggingId, setLoggingId] = useState(null)
   const [msg, setMsg] = useState('')
+  const [msgError, setMsgError] = useState(false)
   const [weekStreak, setWeekStreak] = useState({})
 
   useEffect(() => { load() }, [])
@@ -85,22 +86,41 @@ export default function SupplementsPage() {
 
   async function logDose(supp) {
     setLoggingId(supp.id)
-    const { data:{ user } } = await supabase.auth.getUser()
-    await supabase.from('supplement_logs').insert({
-      user_id: user.id,
-      supplement_id: supp.id,
-      logged_at: today(),
-      dose_amount: supp.dose_amount,
-      dose_unit: supp.dose_unit,
-      taken_at: new Date().toISOString()
-    })
-    // Deduct from stock
-    if (supp.stock_count > 0) {
-      await supabase.from('supplements').update({ stock_count: Math.max(0, supp.stock_count - supp.dose_amount) }).eq('id', supp.id)
+    try {
+      const { data:{ user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) { router.replace('/auth'); return }
+      const { data: log, error } = await supabase.from('supplement_logs').insert({
+        user_id: user.id,
+        supplement_id: supp.id,
+        logged_at: today(),
+        dose_amount: supp.dose_amount,
+        dose_unit: supp.dose_unit,
+        taken_at: new Date().toISOString()
+      }).select().single()
+      if (error) throw error
+      setLogs(previous => [...previous, log])
+
+      if (supp.stock_count > 0) {
+        const stockCount = Math.max(0, supp.stock_count - supp.dose_amount)
+        const { error: stockError } = await supabase.from('supplements')
+          .update({ stock_count: stockCount }).eq('id', supp.id)
+        if (stockError) {
+          console.error('[Supplements] Dose saved, but stock update failed', stockError)
+          showMsg(`${supp.name} logged, but stock could not be updated.`, true)
+          return
+        }
+        setSupplements(previous => previous.map(item =>
+          item.id === supp.id ? { ...item, stock_count: stockCount } : item
+        ))
+      }
+      showMsg('✓ ' + supp.name + ' logged!')
+    } catch (error) {
+      console.error('[Supplements] Failed to log dose', error)
+      showMsg('Could not log this dose. Please try again.', true)
+    } finally {
+      setLoggingId(null)
     }
-    showMsg('✓ ' + supp.name + ' logged!')
-    setLoggingId(null)
-    load()
   }
 
   async function undoLog(suppId) {
@@ -112,11 +132,21 @@ export default function SupplementsPage() {
   }
 
   async function quickAddSupplement(template) {
-    const { data:{ user } } = await supabase.auth.getUser()
-    await supabase.from('supplements').insert({ user_id: user.id, ...template, times_per_day: 1, frequency: 'daily', stock_count: 0 })
-    setShowQuickAdd(false)
-    showMsg(template.name + ' added!')
-    load()
+    try {
+      const { data:{ user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) { router.replace('/auth'); return }
+      const { error } = await supabase.from('supplements').insert({
+        user_id: user.id, ...template, times_per_day: 1, frequency: 'daily', stock_count: 0
+      })
+      if (error) throw error
+      setShowQuickAdd(false)
+      showMsg(template.name + ' added!')
+      load()
+    } catch (error) {
+      console.error('[Supplements] Failed to add supplement', error)
+      showMsg('Could not add this supplement. Please try again.', true)
+    }
   }
 
   async function deleteSupp(id) {
@@ -124,7 +154,11 @@ export default function SupplementsPage() {
     load()
   }
 
-  function showMsg(m) { setMsg(m); setTimeout(()=>setMsg(''), 2500) }
+  function showMsg(m, isError = false) {
+    setMsgError(isError)
+    setMsg(m)
+    setTimeout(()=>setMsg(''), 2500)
+  }
 
   const pct = supplements.length > 0 ? Math.round((todayCount()/supplements.length)*100) : 0
   const weekDays = Array.from({length:7},(_,i)=>{
@@ -154,7 +188,7 @@ export default function SupplementsPage() {
           </div>
         </div>
 
-        {msg&&<div style={{background:'#d1fae5',border:'1.5px solid #6ee7b7',borderRadius:12,padding:'10px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:'#059669'}}>{msg}</div>}
+        {msg&&<div role={msgError?'alert':'status'} aria-live={msgError?'assertive':'polite'} style={{background:msgError?'#fef2f2':'#d1fae5',border:`1.5px solid ${msgError?'#fca5a5':'#6ee7b7'}`,borderRadius:12,padding:'10px 16px',marginBottom:16,fontSize:13,fontWeight:600,color:msgError?'#b91c1c':'#059669'}}>{msg}</div>}
 
         {/* Daily progress ring */}
         {supplements.length > 0 && (

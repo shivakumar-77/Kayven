@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { fetchMeteredAI } from '@/lib/client/metered-ai-fetch'
 import BottomNav from '@/components/BottomNav'
 import { SaladIcon, FoodIcon, SunriseIcon, SunIcon, MoonIcon, AppleIcon, WarningIcon, TimerIcon, PencilIcon, LightbulbIcon, CartIcon, DropletIcon } from '@/lib/icons'
 
@@ -127,9 +128,8 @@ User profile: Gender: ${profile.gender || 'not specified'}, Age: ${profile.age |
 User food preferences: Diet type: ${prefs.diet_type || 'non-vegetarian'}, Cuisine: ${prefs.cuisine || 'Indian'}, Breakfast: ${prefs.breakfast_pref || 'eggs'}, Lunch: ${prefs.lunch_pref || 'rice and dal'}, Dinner: ${prefs.dinner_pref || 'roti and vegetables'}, Snack: ${prefs.snack_pref || 'fruits and nuts'}, Foods to avoid: ${prefs.allergies || 'none'}, Cooking time: ${prefs.cooking_time || 'moderate'}
 Create ONLY a JSON response with: summary, meals array (with type, time, items with name/qty/cal/protein/carb/fat/note, totals, tip), day_total_cal, day_total_protein, shopping_list, hydration_tip, pro_tip`
     try {
-      const res = await fetch('/api/meal-plan', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ targets:{ cal:profile.cal_target||1700, protein:profile.protein_target||167, carb:profile.carb_target||144, fat:profile.fat_target||60 }, profile, preferences:prefs, customPrompt:prompt })
+      const res = await fetchMeteredAI('/api/meal-plan', {
+        targets:{ cal:profile.cal_target||1700, protein:profile.protein_target||167, carb:profile.carb_target||144, fat:profile.fat_target||60 }, profile, preferences:prefs, customPrompt:prompt
       })
       const data = await res.json()
       if (data.result) {
@@ -145,7 +145,7 @@ Create ONLY a JSON response with: summary, meals array (with type, time, items w
         setStep('plan')
       } else {
         setStep('quiz'); setQuizStep(0)
-        alert('Could not generate plan. Please try again.')
+        alert(data.error === 'AI_USAGE_LIMIT_REACHED' ? data.message : 'Could not generate plan. Please try again.')
       }
     } catch (e) {
       console.error(e)

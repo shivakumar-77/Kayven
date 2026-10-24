@@ -290,7 +290,7 @@ export default function ProfilePage() {
     { id:'profile', icon:<IconPerson size={18} color="#fff"/>, iconBg:'var(--primary)', label:'Profile', sub:`${profilePct}% complete`, action:()=>setView('edit') },
     { id:'goals', icon:<TargetIcon size={18} color="#fff"/>, iconBg:'#10b981', label:'Goals', sub:'Calories, macros, weight goal', action:()=>setView('goals') },
     { id:'progress', icon:<TrophyIcon size={18} color="#fff"/>, iconBg:'#f59e0b', label:'Progress & Achievements', sub:'Streaks, badges, challenges', action:()=>router.push('/progress') },
-    { id:'subscription', icon:<IconCrown size={18} color="#fff"/>, iconBg:'#8b5cf6', label:'Subscription', sub:'View your plan and AI Coach usage', action:()=>router.push('/subscription') },
+    { id:'subscription', icon:<IconCrown size={18} color="#fff"/>, iconBg:'#8b5cf6', label:'Subscription', sub:'View your plan and AI Coach usage', action:()=>router.push('/subscription/manage') },
     { id:'privacy', icon:<LockIcon size={18} color="#fff"/>, iconBg:'#3b82f6', label:'Privacy', sub:'How your data is handled', action:()=>{ setLegalPage('privacy'); setView('legal') } },
     { id:'notifications', icon:<BellIcon size={18} color="#fff"/>, iconBg:'#f97316', label:'Notifications', sub: notifPermission==='granted' ? `${reminders.filter(r=>r.enabled).length} reminders active` : 'Set meal reminders', action:()=>setView('notifications') },
     { id:'dataExport', icon:<IconDownloadTray size={18} color="#fff"/>, iconBg:'#0ea5e9', label:'Data Export', sub:'Request a copy of your data', action:()=>{ setLegalPage('data'); setView('legal') } },

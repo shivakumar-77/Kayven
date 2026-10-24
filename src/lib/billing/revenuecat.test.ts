@@ -27,6 +27,7 @@ export function runRevenueCatTests(): void {
 
   if (normalizeRevenueCatStatus({ type: 'BILLING_ISSUE' }) !== 'past_due') throw new Error('billing issue mapping failed')
   if (normalizeRevenueCatStatus({ type: 'CANCELLATION' }) !== 'canceled') throw new Error('cancellation mapping failed')
+  if (normalizeRevenueCatStatus({ type: 'UNCANCELLATION' }) !== 'active') throw new Error('uncancellation must restore active access')
   if (normalizeRevenueCatStatus({ type: 'EXPIRATION' }) !== 'expired') throw new Error('expiration mapping failed')
   if (normalizeRevenueCatStatus({ type: 'RENEWAL' }) !== 'active') throw new Error('renewal mapping failed')
 

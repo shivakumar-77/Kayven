@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Purchases, type CustomerInfo, type Offering, type Package } from '@revenuecat/purchases-js'
 import { supabase } from '@/lib/supabase'
-import { authenticatedBillingFetch, clearSubscriptionState, refreshSubscription, waitForSubscriptionPlan } from './client'
+import { clearSubscriptionState, refreshSubscription, waitForSubscriptionPlan } from './client'
 import type { PlanId } from './plans'
 
 export interface RevenueCatClientState {
@@ -87,7 +87,8 @@ export async function initializeRevenueCat(userId: string): Promise<RevenueCatCl
         offering: offerings.current,
         customerInfo,
       })
-    } catch {
+    } catch (error) {
+      console.error('[KAYVEN Billing] RevenueCat initialization failed', error)
       instance = null
       currentUserId = null
       return state({ configured: true, initialized: false, loading: false, error: 'Billing is unavailable right now.' })
@@ -108,20 +109,18 @@ export async function refreshRevenueCatState(): Promise<RevenueCatClientState> {
       instance.getOfferings(),
       instance.getCustomerInfo(),
     ])
-    const next = state({ offering: offerings.current, customerInfo, error: null })
-    await refreshSubscription().catch(() => undefined)
-    return next
-  } catch {
+    return state({ offering: offerings.current, customerInfo, error: null })
+  } catch (error) {
+    console.error('[KAYVEN Billing] RevenueCat refresh failed', error)
     return state({ error: 'Billing is unavailable right now.' })
   }
 }
 
 async function syncServerSubscription(expectedPlan?: Exclude<PlanId, 'free'>): Promise<void> {
-  await authenticatedBillingFetch('/api/subscription/refresh', { method: 'POST' }).catch(() => undefined)
+  await refreshSubscription()
   if (expectedPlan) {
-    await waitForSubscriptionPlan(expectedPlan)
-  } else {
-    await refreshSubscription().catch(() => undefined)
+    const confirmed = await waitForSubscriptionPlan(expectedPlan)
+    if (!confirmed) throw new Error('The provider has not confirmed the subscription yet.')
   }
 }
 

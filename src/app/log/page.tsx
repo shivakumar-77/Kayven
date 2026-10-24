@@ -9,6 +9,7 @@ import { PageLoader } from '@/components/Skeleton'
 import BarcodeScanner from '@/components/BarcodeScanner'
 import { SearchIcon, CameraIcon, TagIcon, PackageIcon, EditIcon, StarIcon, ClockIcon, SaladIcon, FoodIcon, ReceiptIcon } from '@/lib/icons'
 import { FOOD_DATABASE } from '@/lib/foodDatabase'
+import { fetchMeteredAI } from '@/lib/client/metered-ai-fetch'
 
 const MEAL_TYPES = ['breakfast','lunch','dinner','snack','other']
 const todayStr = () => new Date().toISOString().slice(0,10)
@@ -81,6 +82,7 @@ export default function LogPage() {
   const [scanError, setScanError] = useState('')
   const [manual, setManual] = useState({ name:'', qty:'100', unit:'g', cal:'', protein:'', carb:'', fat:'', fiber:'' })
   const [toastMsg, setToastMsg] = useState('')
+  const [toastError, setToastError] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [categoryFoods, setCategoryFoods] = useState([])
   const [showAllCategories, setShowAllCategories] = useState(false)
@@ -93,7 +95,11 @@ export default function LogPage() {
     const f = getFavs(); setFavs(f); setFavNames(new Set(f.map(x => x.name)))
   }, [])
 
-  function showToast(m) { setToastMsg(m); setTimeout(() => setToastMsg(''), 2000) }
+  function showToast(m, isError = false) {
+    setToastError(isError)
+    setToastMsg(m)
+    setTimeout(() => setToastMsg(''), 2000)
+  }
 
   function onQueryChange(val) {
     setQuery(val); setSelected(null)
@@ -161,32 +167,51 @@ export default function LogPage() {
     const src = foodOverride || (selected ? scale(selected, qty) : null)
     if (!src) return
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.replace('/auth'); return }
-    await supabase.from('food_logs').insert({
-      user_id:user.id, logged_at:todayStr(), name:src.name, qty:src.qty, unit:src.unit||'g',
-      cal:src.cal, protein:src.protein, carb:src.carb, fat:src.fat, fiber:src.fiber||0, meal_type:mealType
-    })
-    saveHistory({ name:src.name, cal:src.cal, protein:src.protein, carb:src.carb, fat:src.fat, fiber:src.fiber||0, unit:src.unit||'g', baseQty:src.baseQty||src.qty })
-    setHistory(getHistory())
-    setSaving(false)
-    showToast('Logged to ' + mealType)
-    setTimeout(() => router.push('/dashboard'), 700)
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) { router.replace('/auth'); return }
+      const { error } = await supabase.from('food_logs').insert({
+        user_id:user.id, logged_at:todayStr(), name:src.name, qty:src.qty, unit:src.unit||'g',
+        cal:src.cal, protein:src.protein, carb:src.carb, fat:src.fat, fiber:src.fiber||0, meal_type:mealType
+      })
+      if (error) throw error
+      saveHistory({ name:src.name, cal:src.cal, protein:src.protein, carb:src.carb, fat:src.fat, fiber:src.fiber||0, unit:src.unit||'g', baseQty:src.baseQty||src.qty })
+      setHistory(getHistory())
+      showToast('Logged to ' + mealType)
+      setTimeout(() => router.push('/dashboard'), 700)
+    } catch (error) {
+      console.error('[Nutrition] Failed to save meal', error)
+      showToast('Could not log this meal. Please try again.', true)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function logManual() {
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser(); if (!user) return
-    const entry = {
-      user_id:user.id, logged_at:todayStr(), name:manual.name||'Custom food',
-      qty:parseFloat(manual.qty)||1, unit:manual.unit,
-      cal:parseFloat(manual.cal)||0, protein:parseFloat(manual.protein)||0,
-      carb:parseFloat(manual.carb)||0, fat:parseFloat(manual.fat)||0,
-      fiber:parseFloat(manual.fiber)||0, meal_type:mealType
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) { router.replace('/auth'); return }
+      const entry = {
+        user_id:user.id, logged_at:todayStr(), name:manual.name||'Custom food',
+        qty:parseFloat(manual.qty)||1, unit:manual.unit,
+        cal:parseFloat(manual.cal)||0, protein:parseFloat(manual.protein)||0,
+        carb:parseFloat(manual.carb)||0, fat:parseFloat(manual.fat)||0,
+        fiber:parseFloat(manual.fiber)||0, meal_type:mealType
+      }
+      const { error } = await supabase.from('food_logs').insert(entry)
+      if (error) throw error
+      saveHistory({ name:entry.name, cal:entry.cal, protein:entry.protein, carb:entry.carb, fat:entry.fat, fiber:entry.fiber, unit:entry.unit, baseQty:entry.qty })
+      showToast('Meal logged')
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('[Nutrition] Failed to save custom meal', error)
+      showToast('Could not log this meal. Please try again.', true)
+    } finally {
+      setSaving(false)
     }
-    await supabase.from('food_logs').insert(entry)
-    saveHistory({ name:entry.name, cal:entry.cal, protein:entry.protein, carb:entry.carb, fat:entry.fat, fiber:entry.fiber, unit:entry.unit, baseQty:entry.qty })
-    setSaving(false); router.push('/dashboard')
   }
 
   async function autoFill() {
@@ -215,10 +240,10 @@ export default function LogPage() {
       const base64 = ev.target.result.split(',')[1]
       setPhotoPreview(ev.target.result)
       try {
-        const res = await fetch('/api/ai-scan', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({image:base64, mimeType:file.type, mode:tab==='recipe'?'recipe':'scan'}) })
+        const res = await fetchMeteredAI('/api/ai-scan', { image:base64, mimeType:file.type, mode:tab==='recipe'?'recipe':'scan' })
         const data = await res.json()
         if (data.result) { setSelected({...data.result, baseQty:data.result.qty}); setQty(data.result.qty) }
-        else setScanError(data.error||'Could not identify food. Try a clearer photo.')
+        else setScanError(data.message||data.error||'Could not identify food. Try a clearer photo.')
       } catch { setScanError('Scan failed. Try again.') }
       finally { setScanning(false) }
     }
@@ -315,7 +340,7 @@ export default function LogPage() {
     <div className="page-root">
       {/* Toast */}
       {toastMsg && (
-        <div style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', background:'#1e293b', color:'#fff', padding:'10px 20px', borderRadius:99, fontSize:13, fontWeight:600, zIndex:9999, boxShadow:'0 4px 20px rgba(0,0,0,0.3)', whiteSpace:'nowrap' }}>
+        <div role={toastError ? 'alert' : 'status'} aria-live={toastError ? 'assertive' : 'polite'} style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', background:toastError?'#dc2626':'#1e293b', color:'#fff', padding:'10px 20px', borderRadius:99, fontSize:13, fontWeight:600, zIndex:9999, boxShadow:'0 4px 20px rgba(0,0,0,0.3)', whiteSpace:'nowrap' }}>
           {toastMsg}
         </div>
       )}

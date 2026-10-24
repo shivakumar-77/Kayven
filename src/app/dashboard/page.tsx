@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
@@ -8,6 +8,7 @@ import { SkeletonDashboard, PageLoader } from '@/components/Skeleton'
 import { useToast } from '@/components/Toast'
 import { FireIcon, DropletIcon, TargetIcon, BoltIcon, ChartBarIcon, MealPlanIcon, AIIcon, ScaleIcon, CheckIcon, MuscleIcon, WarningIcon, TrophyIcon, SunriseIcon, SunIcon, MoonIcon, AppleIcon, FoodIcon, PartyIcon, SupplementIcon, RobotIcon, WaveIcon } from '@/lib/icons'
 import { useSubscription } from '@/lib/billing/client'
+import { createSuggestionsRequester } from '@/lib/suggestions/request'
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -136,6 +137,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [suggestions, setSuggestions] = useState(null)
   const [sugLoading, setSugLoading] = useState(false)
+  const [sugNotice, setSugNotice] = useState(null)
   const [expanded, setExpanded] = useState(null)
   const [scrolled, setScrolled] = useState(false) // new: drives the floating header's frosted state
   const { state: subscriptionState } = useSubscription()
@@ -143,16 +145,24 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/auth'); return }
-    const [{ data: prof }, { data: foodLogs }, { data: waterLogs }] = await Promise.all([
+    const [{ data: prof, error: profileError }, { data: foodLogs }, { data: waterLogs }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('food_logs').select('*').eq('user_id', user.id).eq('logged_at', today()).order('created_at'),
       supabase.from('water_logs').select('amount_ml').eq('user_id', user.id).eq('logged_at', today())
     ])
+    if (profileError) {
+      console.error('[Dashboard] Profile load failed', { code: profileError.code || 'unknown' })
+      router.replace('/onboarding?next=%2Fdashboard')
+      return
+    }
+    if (!prof?.onboarding_completed_at) {
+      router.replace('/onboarding?next=%2Fdashboard')
+      return
+    }
     if (prof) setProfile(prof)
     if (foodLogs) setLogs(foodLogs)
     if (waterLogs) setWaterMl(waterLogs.reduce((s, l) => s + l.amount_ml, 0))
     setLoading(false)
-    if (prof && foodLogs?.length > 0) loadSuggestions(prof, foodLogs)
   }, [router])
 
   useEffect(() => { load() }, [load])
@@ -164,18 +174,17 @@ export default function Dashboard() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  async function loadSuggestions(prof, foodLogs) {
+  const requestSuggestions = useRef(createSuggestionsRequester((url, init) => fetch(url, init))).current
+
+  async function loadSuggestions() {
+    if (sugLoading || !profile || logs.length === 0) return
     setSugLoading(true)
-    try {
-      const totals = foodLogs.reduce((a, l) => ({ cal: a.cal+l.cal, protein: a.protein+l.protein, carb: a.carb+l.carb, fat: a.fat+l.fat }), { cal:0, protein:0, carb:0, fat:0 })
-      const res = await fetch('/api/suggestions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ totals, targets: { cal: prof.cal_target, protein: prof.protein_target, carb: prof.carb_target, fat: prof.fat_target }, logs: foodLogs })
-      })
-      const data = await res.json()
-      if (data.result) setSuggestions(data.result)
-    } catch {} finally { setSugLoading(false) }
+    setSugNotice(null)
+    const totals = logs.reduce((a, l) => ({ cal: a.cal+l.cal, protein: a.protein+l.protein, carb: a.carb+l.carb, fat: a.fat+l.fat }), { cal:0, protein:0, carb:0, fat:0 })
+    const outcome = await requestSuggestions({ totals, targets: { cal: profile.cal_target, protein: profile.protein_target, carb: profile.carb_target, fat: profile.fat_target }, logs })
+    if (outcome.status === 'success') setSuggestions(outcome.result)
+    else setSugNotice({ kind: outcome.status, message: outcome.message })
+    setSugLoading(false)
   }
 
   const totals = logs.reduce((a, l) => ({ cal: a.cal+l.cal, protein: a.protein+l.protein, carb: a.carb+l.carb, fat: a.fat+l.fat, fiber: a.fiber+l.fiber }), { cal:0, protein:0, carb:0, fat:0, fiber:0 })
@@ -311,12 +320,21 @@ export default function Dashboard() {
       </div>
 
       {/* AI Food Suggestions */}
-      {(sugLoading || suggestions?.suggestions?.length > 0) && (
+      {logs.length > 0 && (
         <div className="card fade-in-up" style={{ marginTop:14, animationDelay:'0.1s' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
             <div style={{ fontWeight:700, fontSize:14, display:'flex', alignItems:'center', gap:8 }}><RobotIcon size={18} strokeWidth={1.5}/> AI suggestions</div>
-            <span style={{ fontSize:11, color:'var(--muted)' }}>to complete your macros</span>
+            <button type="button" onClick={loadSuggestions} disabled={sugLoading} className="press-effect"
+              style={{ fontSize:12, fontWeight:600, color:'var(--primary)', background:'var(--card2)', border:'none', borderRadius:10, padding:'6px 12px', cursor: sugLoading ? 'default' : 'pointer', opacity: sugLoading ? 0.6 : 1 }}>
+              {sugLoading ? 'Thinking…' : suggestions ? 'Refresh' : 'Get suggestions'}
+            </button>
           </div>
+          {sugNotice && (
+            <div role="status" style={{ fontSize:12, color: sugNotice.kind === 'limit' ? 'var(--orange)' : 'var(--red)', marginBottom:10 }}>{sugNotice.message}</div>
+          )}
+          {!sugLoading && !suggestions?.suggestions?.length && !sugNotice && (
+            <div style={{ fontSize:12, color:'var(--muted)' }}>Tap to get AI food ideas to complete your macros. Each request uses one AI request from your monthly allowance.</div>
+          )}
           {sugLoading ? (
             <div style={{ display:'flex', gap:8 }}>
               {[1,2,3].map(i=><div key={i} style={{ flex:1, height:60, background:'var(--card2)', borderRadius:12 }}/>)}
@@ -394,13 +412,6 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Log food */}
-      <button className="btn btn-primary pulse-primary fade-in-up"
-        style={{ position:'fixed', left:0, right:0, bottom:'calc(env(safe-area-inset-bottom,0px) + 92px)', margin:'0 auto', width:'fit-content', minWidth:170, maxWidth:'calc(100% - 40px)', zIndex:998, fontSize:15, fontWeight:700, padding:'13px 24px', animationDelay:'0.25s', boxShadow:'var(--shadow-primary)', whiteSpace:'nowrap' }}
-        onClick={() => router.push('/log')}>
-        + Log food
-      </button>
-
       {/* Food logs */}
       <div style={{ marginTop:28 }}>
         {logs.length === 0 ? (
@@ -409,7 +420,7 @@ export default function Dashboard() {
               <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=80&h=80&fit=crop" alt="food" style={{ width:80, height:80, borderRadius:'50%', objectFit:'cover', opacity:0.5 }}/>
             </div>
             <p style={{ fontWeight:600, marginBottom:4 }}>Nothing logged yet</p>
-            <p style={{ fontSize:13 }}>Tap "Log food" to start tracking</p>
+            <p style={{ fontSize:13 }}>Tap Log in the bottom bar to start tracking</p>
           </div>
         ) : (
           mealGroups.map((meal, gi) => {

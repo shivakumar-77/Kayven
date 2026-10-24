@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import BottomNav from '@/components/BottomNav'
 import { ACHIEVEMENTS, RARITY_COLORS, WEEKLY_CHALLENGES } from '@/lib/achievements'
 import { checkAndAwardAchievements, updateStreak } from '@/lib/gamification'
+import { calculateWeeklyChallengeProgress } from '@/lib/challenge-progress'
 import { PageLoader } from '@/components/Skeleton'
 
 export default function ProgressPage() {
@@ -17,7 +18,7 @@ export default function ProgressPage() {
   const [stats, setStats] = useState({ workouts: 0, meals: 0, prs: 0, volume: 0, daysLogged: 0 })
   const [profile, setProfile] = useState<any>(null)
   const [weights, setWeights] = useState<any[]>([])
-  const [challenges, setChallenges] = useState<any[]>([])
+  const [challenges, setChallenges] = useState<Record<string, number>>({})
   const [showNewAch, setShowNewAch] = useState(false)
 
   useEffect(() => { load() }, [])
@@ -38,23 +39,31 @@ export default function ProgressPage() {
     const [
       { data: achData }, { data: streakFull }, { data: wlogs },
       { data: flogs }, { data: prs }, { data: prof }, { data: wts },
-      { data: challData }
+      { data: waterLogs }
     ] = await Promise.all([
       supabase.from('achievements').select('achievement_id').eq('user_id', user.id),
       supabase.from('streaks').select('*').eq('user_id', user.id).single(),
-      supabase.from('workout_logs').select('total_volume_kg').eq('user_id', user.id),
-      supabase.from('food_logs').select('logged_at').eq('user_id', user.id),
+      supabase.from('workout_logs').select('total_volume_kg, started_at').eq('user_id', user.id),
+      supabase.from('food_logs').select('logged_at, meal_type, cal, protein').eq('user_id', user.id),
       supabase.from('exercise_prs').select('id').eq('user_id', user.id),
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('weight_logs').select('*').eq('user_id', user.id).order('logged_at'),
-      supabase.from('challenges').select('*').eq('user_id', user.id)
+      supabase.from('water_logs').select('logged_at, amount_ml').eq('user_id', user.id)
     ])
 
     if (achData) setEarned(new Set(achData.map((a: any) => a.achievement_id)))
     if (streakFull) setStreak({ current: streakFull.current_streak, longest: streakFull.longest_streak, total: streakFull.total_days_logged })
     if (prof) setProfile(prof)
     if (wts) setWeights(wts)
-    if (challData) setChallenges(challData)
+    setChallenges(calculateWeeklyChallengeProgress({
+      foodLogs: flogs || [],
+      workoutLogs: wlogs || [],
+      waterLogs: waterLogs || [],
+      weightLogs: wts || [],
+      calorieTarget: prof?.cal_target,
+      proteinTarget: prof?.protein_target,
+      waterTarget: prof?.water_goal,
+    }))
 
     const uniqueDays = new Set((flogs || []).map((l: any) => l.logged_at))
     const totalVol = (wlogs || []).reduce((s: number, w: any) => s + (w.total_volume_kg || 0), 0)
@@ -347,9 +356,8 @@ export default function ProgressPage() {
             </div>
 
             {WEEKLY_CHALLENGES.map(ch => {
-              const userCh = challenges.find(c => c.challenge_id === ch.id)
-              const progress = userCh?.progress || 0
-              const completed = userCh?.completed_at != null
+              const progress = challenges[ch.id] || 0
+              const completed = progress >= ch.target
               const pct = Math.min(100, Math.round((progress / ch.target) * 100))
               return (
                 <div key={ch.id} className="card" style={{ marginBottom: 12, opacity: completed ? 0.8 : 1 }}>

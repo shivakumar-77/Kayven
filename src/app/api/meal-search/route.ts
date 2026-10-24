@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { FOOD_DATABASE } from '@/lib/foodDatabase'
 
 type UsdaNutrient = {
   nutrientName?: string
@@ -97,37 +92,40 @@ async function searchUsdaFoods(query: string): Promise<Record<string, unknown>[]
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q') || ''
   const cat = req.nextUrl.searchParams.get('cat') || ''
-  const page = parseInt(req.nextUrl.searchParams.get('page') || '0')
+  const page = Math.max(0, Number.parseInt(req.nextUrl.searchParams.get('page') || '0', 10) || 0)
   const limit = 20
 
   if (!q && !cat) return NextResponse.json({ results: [] })
 
   try {
-    let query = supabase
-      .from('foods')
-      .select('id,name,name_local,category,cal,protein,carb,fat,fiber,serving_size,serving_unit,brand,is_indian')
-      .range(page * limit, (page + 1) * limit - 1)
-
-    if (q) {
-      // Full text search + name_local for Indian names
-      query = query.or(`name.ilike.%${q}%,name_local.ilike.%${q}%`)
-    }
-    if (cat) {
-      query = query.eq('category', cat)
-    }
-
-    query = query.order('is_indian', { ascending: false }).order('name')
-
-    const { data: localResults, error } = await query
-
-    if (error) {
-      console.error('[Kayven Food Search] Local search unavailable', { code: error.code })
-    }
-
-    let combined: any[] = localResults || []
+    const needle = q.trim().toLowerCase()
+    const localMatches = Object.entries(FOOD_DATABASE)
+      .flatMap(([categoryKey, foods]) => foods.map((food, index) => {
+        const category = categoryKey.replace(/([A-Z])/g, ' $1').replace(/^./, first => first.toUpperCase())
+        return {
+          id: `local_${categoryKey}_${index}`,
+          name: food.name,
+          name_local: null,
+          category,
+          brand: null,
+          cal: food.cal,
+          protein: food.protein,
+          carb: food.carb,
+          fat: food.fat,
+          fiber: food.fiber,
+          serving_size: food.baseQty,
+          serving_unit: food.unit,
+          is_indian: categoryKey.toLowerCase().includes('indian'),
+        }
+      }))
+      .filter(food => (!needle || food.name.toLowerCase().includes(needle))
+        && (!cat || cat.toLowerCase() === 'all' || food.category.toLowerCase() === cat.toLowerCase()))
+      .sort((a, b) => Number(b.is_indian) - Number(a.is_indian) || a.name.localeCompare(b.name))
+    const localResults = localMatches.slice(page * limit, (page + 1) * limit)
+    let combined: Record<string, unknown>[] = localResults
 
     // If fewer than 10 local results and has query, also fetch OpenFoodFacts
-    if (q && combined.length < 10) {
+    if (q && localMatches.length < 10) {
       try {
         const offRes = await fetch(
           `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,nutriments,serving_size,brands`,
@@ -171,7 +169,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       results: combined,
       page,
-      hasMore: (localResults?.length || 0) === limit,
+      hasMore: localMatches.length > (page + 1) * limit,
     })
   } catch (err) {
     console.error('[Kayven Food Search] Search failed')

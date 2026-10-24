@@ -22,7 +22,17 @@ export default function Page() {
           }
           router.replace('/auth')
         } else if (data.session) {
-          router.replace('/dashboard')
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('onboarding_completed_at')
+            .eq('id', data.session.user.id)
+            .maybeSingle()
+          if (profileError) {
+            console.error('[Home] Profile completion check failed', { code: profileError.code || 'unknown' })
+            router.replace('/onboarding?next=%2Fdashboard')
+          } else {
+            router.replace(profile?.onboarding_completed_at ? '/dashboard' : '/onboarding?next=%2Fdashboard')
+          }
         } else {
           router.replace('/auth')
         }

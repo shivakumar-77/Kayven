@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/server/supabase'
+import { runMeteredAI } from '@/lib/billing/server'
+import { meteredAIFailureResponse } from '@/lib/server/ai-quota-response'
+import { isValidAIIdempotencyKey } from '@/lib/server/ai-idempotency'
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const idempotencyKey = req.headers.get('Idempotency-Key')
+    if (!isValidAIIdempotencyKey(idempotencyKey)) return NextResponse.json({ error: 'AI_IDEMPOTENCY_KEY_REQUIRED' }, { status: 400 })
+
     const { image, mimeType, mode } = await req.json()
     if (!image || typeof image !== 'string') return NextResponse.json({ error: 'Invalid image' }, { status: 400 })
     if (image.length > 8 * 1024 * 1024) return NextResponse.json({ error: 'Image too large. Max 5MB.' }, { status: 400 })
@@ -19,37 +29,48 @@ Respond ONLY with this JSON, no markdown:
 Respond ONLY with this JSON, no markdown:
 {"name":"food name","qty":100,"unit":"g","cal":0,"protein":0,"carb":0,"fat":0,"fiber":0,"description":"brief description"}`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':process.env.ANTHROPIC_API_KEY, 'anthropic-version':'2024-06-01' },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 512,
-        messages: [{
-          role: 'user',
-          content: [
-            { type:'image', source:{ type:'base64', media_type:mimeType||'image/jpeg', data:image } },
-            { type:'text', text:prompt }
-          ]
-        }]
-      }),
-      signal: (() => { const controller = new AbortController(); setTimeout(() => controller.abort(), 60000); return controller.signal; })()
-    })
+    type ScanOutcome = { response: NextResponse } | { result: { name: string; cal: number } }
+    const outcome = await runMeteredAI<ScanOutcome>({
+      supabase,
+      userId: user.id,
+      feature: 'ai_coach',
+      idempotencyKey,
+      execute: async () => {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'x-api-key':process.env.ANTHROPIC_API_KEY as string, 'anthropic-version':'2024-06-01' },
+          body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 512,
+            messages: [{
+              role: 'user',
+              content: [
+                { type:'image', source:{ type:'base64', media_type:mimeType||'image/jpeg', data:image } },
+                { type:'text', text:prompt }
+              ]
+            }]
+          }),
+          signal: AbortSignal.timeout(60000)
+        })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('Anthropic API error:', response.status, errorData)
-      return NextResponse.json({ error: 'AI service error', details: errorData }, { status: 502 })
-    }
-    const data = await response.json()
-    const text = data.content?.[0]?.text ?? ''
-    let result = null
-    try {
-      result = JSON.parse(text.replace(/```json|```/g,'').trim())
-      if (!result.name || typeof result.cal !== 'number') result = null
-    } catch { result = null }
-    if (!result) return NextResponse.json({ error: 'Could not read nutrition info. Try a clearer photo.' }, { status: 422 })
-    return NextResponse.json({ result })
+        if (!response.ok) {
+          console.error('Anthropic API error:', response.status)
+          return { value: { response: NextResponse.json({ error: 'AI service error' }, { status: 502 }) }, billable: false }
+        }
+        const data = await response.json()
+        const text = data.content?.[0]?.text ?? ''
+        let result = null
+        try {
+          result = JSON.parse(text.replace(/```json|```/g,'').trim())
+          if (!result.name || typeof result.cal !== 'number') result = null
+        } catch { result = null }
+        if (!result) return { value: { response: NextResponse.json({ error: 'Could not read nutrition info. Try a clearer photo.' }, { status: 422 }) }, billable: false }
+        return { value: { result }, billable: true }
+      },
+    })
+    if (outcome.status !== 'ok') return meteredAIFailureResponse(outcome)
+    if ('response' in outcome.value) return outcome.value.response
+    return NextResponse.json({ result: outcome.value.result })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }

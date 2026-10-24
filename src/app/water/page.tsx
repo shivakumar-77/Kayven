@@ -13,6 +13,8 @@ export default function WaterPage() {
   const [selectedMl, setSelectedMl] = useState(250)
   const [customMl, setCustomMl] = useState('')
   const [showCustom, setShowCustom] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [calMonth, setCalMonth] = useState(new Date())
   const [calData, setCalData] = useState({})
   const [userId, setUserId] = useState(null)
@@ -50,12 +52,26 @@ export default function WaterPage() {
 
   async function addWater(ml) {
     if (!userId) return
+    if (!Number.isFinite(ml) || ml <= 0) {
+      setSaveError('Enter a valid amount of water.')
+      return
+    }
+    setSaving(true)
+    setSaveError('')
     const today = new Date().toISOString().slice(0, 10)
-    await supabase.from('water_logs').insert({ user_id: userId, logged_at: today, amount_ml: ml })
-    setTodayMl(prev => prev + ml)
-    setLogs(prev => [...prev, { amount_ml: ml, created_at: new Date().toISOString() }])
-    setCalData(prev => ({ ...prev, [today]: (prev[today] || 0) + ml }))
-    setShowCustom(false); setCustomMl('')
+    try {
+      const { error } = await supabase.from('water_logs').insert({ user_id: userId, logged_at: today, amount_ml: ml })
+      if (error) throw error
+      setTodayMl(prev => prev + ml)
+      setLogs(prev => [...prev, { amount_ml: ml, created_at: new Date().toISOString() }])
+      setCalData(prev => ({ ...prev, [today]: (prev[today] || 0) + ml }))
+      setShowCustom(false); setCustomMl('')
+    } catch (error) {
+      console.error('[Water] Failed to save water log', error)
+      setSaveError('Water was not logged. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function changeMonth(dir) {
@@ -142,10 +158,11 @@ export default function WaterPage() {
       </div>
 
       <div style={{ padding: '0 20px 20px' }}>
+        {saveError && <p role="alert" style={{ color: '#dc2626', fontSize: 13, textAlign: 'center', margin: '0 0 12px' }}>{saveError}</p>}
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, textAlign: 'center' }}>Select amount</div>
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
           {PRESETS.map(ml => (
-            <button key={ml} onClick={() => setSelectedMl(ml)}
+            <button key={ml} onClick={() => setSelectedMl(ml)} disabled={saving}
               style={{ flexShrink: 0, padding: '12px 18px', borderRadius: 16, border: `2px solid ${selectedMl===ml?wc:'var(--border)'}`, background: selectedMl===ml?`${wc}18`:'var(--card)', color: selectedMl===ml?wc:'var(--muted)', fontWeight: 700, fontSize: 15, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <span style={{ fontSize: 20, fontWeight: 800 }}>{ml}</span>
               <span style={{ fontSize: 10 }}>ml</span>
@@ -155,9 +172,9 @@ export default function WaterPage() {
       </div>
 
       <div style={{ padding: '0 20px 16px' }}>
-        <button onClick={() => addWater(selectedMl)}
-          style={{ width: '100%', padding: '17px', borderRadius: 20, background: wc, color: '#fff', fontSize: 17, fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: `0 6px 20px ${wc}40` }}>
-          + WATER ({selectedMl}ml)
+        <button onClick={() => addWater(selectedMl)} disabled={saving}
+          style={{ width: '100%', padding: '17px', borderRadius: 20, background: wc, color: '#fff', fontSize: 17, fontWeight: 800, border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: `0 6px 20px ${wc}40` }}>
+          {saving ? 'Saving…' : `+ WATER (${selectedMl}ml)`}
         </button>
       </div>
 
@@ -168,12 +185,12 @@ export default function WaterPage() {
           </button>
         ) : (
           <div style={{ display: 'flex', gap: 8, width: '100%', maxWidth: 280 }}>
-            <input type="number" placeholder="e.g. 330ml" value={customMl} onChange={e => setCustomMl(e.target.value)}
+            <input type="number" placeholder="e.g. 330ml" value={customMl} onChange={e => setCustomMl(e.target.value)} disabled={saving}
               onKeyDown={e => e.key==='Enter' && parseInt(customMl)>0 && addWater(parseInt(customMl))}
               style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: 16 }} autoFocus/>
-            <button onClick={() => parseInt(customMl)>0 && addWater(parseInt(customMl))}
-              style={{ padding: '12px 18px', borderRadius: 14, background: wc, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Add</button>
-            <button onClick={() => { setShowCustom(false); setCustomMl('') }}
+            <button onClick={() => parseInt(customMl)>0 && addWater(parseInt(customMl))} disabled={saving}
+              style={{ padding: '12px 18px', borderRadius: 14, background: wc, color: '#fff', border: 'none', fontWeight: 700, cursor: saving ? 'wait' : 'pointer' }}>{saving ? 'Saving…' : 'Add'}</button>
+            <button onClick={() => { setShowCustom(false); setCustomMl('') }} disabled={saving}
               style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 20, cursor: 'pointer' }}>×</button>
           </div>
         )}

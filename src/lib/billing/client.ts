@@ -77,7 +77,17 @@ async function fetchSubscriptionState(): Promise<ClientSubscriptionState> {
 export async function refreshSubscription(): Promise<ClientSubscriptionState> {
   cachedState = null
   cachedError = null
-  return fetchSubscriptionState()
+  const response = await authenticatedBillingFetch('/api/subscription/refresh', { method: 'POST' })
+  const payload = await response.json()
+  if (!response.ok) {
+    throw new Error(payload.error || 'Unable to refresh subscription state')
+  }
+
+  const state = await fetchSubscriptionState()
+  if (state.statusUnavailable) {
+    throw new Error(cachedError || 'Unable to load subscription state')
+  }
+  return state
 }
 
 export function clearSubscriptionState(): void {
@@ -97,7 +107,7 @@ export async function waitForSubscriptionPlan(
 
   while (Date.now() - startedAt <= timeoutMs) {
     try {
-      const current = await refreshSubscription()
+      const current = await fetchSubscriptionState()
       if (current.currentPlan === expectedPlan) return current
     } catch {
       // Keep polling boundedly; the server remains authoritative.

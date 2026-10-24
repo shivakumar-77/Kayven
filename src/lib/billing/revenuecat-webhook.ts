@@ -3,6 +3,17 @@ import { getRevenueCatConfig } from './revenuecat-config'
 import { normalizeRevenueCatStatus, type RevenueCatEventPayload } from './revenuecat-normalizer'
 import type { RevenueCatProvider } from './revenuecat'
 
+const SUBSCRIPTION_EVENT_TYPES = new Set([
+  'INITIAL_PURCHASE',
+  'RENEWAL',
+  'CANCELLATION',
+  'UNCANCELLATION',
+  'BILLING_ISSUE',
+  'EXPIRATION',
+  'PRODUCT_CHANGE',
+  'TRANSFER',
+])
+
 export interface VerifiedRevenueCatEvent {
   id: string
   type: string
@@ -38,21 +49,32 @@ export async function syncRevenueCatWebhookEvent(
     .maybeSingle()
 
   if (lookupError) return { ok: false, duplicate: false }
-  if (existing) return { ok: true, duplicate: true }
+  if (existing?.status === 'processed') return { ok: true, duplicate: true }
 
-  const { error: insertError } = await supabase
-    .from('billing_webhook_events')
-    .insert({
-      provider: 'revenuecat',
-      provider_event_id: verifiedEvent.id,
-      event_type: verifiedEvent.type,
-      provider_user_id: verifiedEvent.appUserId,
-      status: 'processing',
-    })
+  const eventWrite = existing
+    ? await supabase
+      .from('billing_webhook_events')
+      .update({ status: 'processing' })
+      .eq('id', existing.id)
+    : await supabase
+      .from('billing_webhook_events')
+      .insert({
+        provider: 'revenuecat',
+        provider_event_id: verifiedEvent.id,
+        event_type: verifiedEvent.type,
+        provider_user_id: verifiedEvent.appUserId,
+        status: 'processing',
+      })
 
-  if (insertError) {
-    const duplicate = insertError.code === '23505'
-    return { ok: duplicate, duplicate }
+  if (eventWrite.error) return { ok: false, duplicate: Boolean(existing) }
+
+  if (!SUBSCRIPTION_EVENT_TYPES.has(verifiedEvent.type.toUpperCase())) {
+    const processed = await supabase
+      .from('billing_webhook_events')
+      .update({ status: 'processed', processed_at: new Date().toISOString() })
+      .eq('provider', 'revenuecat')
+      .eq('provider_event_id', verifiedEvent.id)
+    return { ok: !processed.error, duplicate: Boolean(existing) }
   }
 
   const subscriberState = provider.normalizeSubscriber(verifiedEvent.appUserId, {
@@ -98,15 +120,36 @@ export async function syncRevenueCatWebhookEvent(
     cancel_at_period_end: state.cancelAtPeriodEnd || status === 'canceled',
   } : null
 
-  const syncError = subscription
-    ? (await supabase.from('subscriptions').upsert(subscription, { onConflict: 'provider,provider_subscription_id' })).error
-    : (await supabase.from('subscriptions').update({ status, plan_id: 'free', updated_at: new Date().toISOString() }).eq('user_id', verifiedEvent.appUserId).eq('provider', 'revenuecat')).error
+  let syncError: unknown = null
+  if (subscription) {
+    const { data: existingSubscription, error: subscriptionLookupError } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('provider', 'revenuecat')
+      .eq('provider_subscription_id', subscription.provider_subscription_id)
+      .maybeSingle()
+    if (subscriptionLookupError) {
+      syncError = subscriptionLookupError
+    } else {
+      const write = existingSubscription
+        ? await supabase.from('subscriptions').update(subscription).eq('id', existingSubscription.id)
+        : await supabase.from('subscriptions').insert(subscription)
+      syncError = write.error
+    }
+  } else {
+    const write = await supabase
+      .from('subscriptions')
+      .update({ status, plan_id: 'free', updated_at: new Date().toISOString() })
+      .eq('user_id', verifiedEvent.appUserId)
+      .eq('provider', 'revenuecat')
+    syncError = write.error
+  }
 
-  await supabase
+  const eventStatus = await supabase
     .from('billing_webhook_events')
     .update({ status: syncError ? 'failed' : 'processed', processed_at: syncError ? null : new Date().toISOString() })
     .eq('provider', 'revenuecat')
     .eq('provider_event_id', verifiedEvent.id)
 
-  return { ok: !syncError, duplicate: false }
+  return { ok: !syncError && !eventStatus.error, duplicate: Boolean(existing) }
 }

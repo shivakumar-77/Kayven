@@ -1,9 +1,12 @@
 'use client'
 
 export const dynamic = 'force-dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { isMissingOnboardingSchema, safeReturnPath } from '@/lib/onboarding'
+
+const ONBOARDING_SCHEMA_ERROR = 'Your account is signed in, but onboarding setup is incomplete in the configured Supabase project. Apply migration 20261024000000_onboarding_profile_state.sql, then try again.'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -15,15 +18,41 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
 
+  const requestedNextPath = useCallback(() => {
+    return typeof window === 'undefined' ? null : safeReturnPath(new URLSearchParams(window.location.search).get('next'))
+  }, [])
+
+  const routeAuthenticatedUser = useCallback(async (userId: string) => {
+    const { data: profile, error } = await supabase.from('profiles').select('onboarding_completed_at').eq('id', userId).maybeSingle()
+    if (error) {
+      console.error('[Auth] Profile completion check failed', { code: error.code || 'unknown' })
+      setError(isMissingOnboardingSchema(error)
+        ? ONBOARDING_SCHEMA_ERROR
+        : 'You are signed in, but we could not load your profile. Please retry.')
+      setLoading(false)
+      return
+    }
+    const next = requestedNextPath()
+    if (profile?.onboarding_completed_at) {
+      router.replace(next && next !== '/onboarding' ? next : '/dashboard')
+      return
+    }
+    const continuation = next && next !== '/onboarding' ? next : '/dashboard'
+    router.replace(`/onboarding?next=${encodeURIComponent(continuation)}`)
+  }, [requestedNextPath, router])
+
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const searchParams = new URLSearchParams(window.location.search)
+    if (searchParams.get('mode') === 'signup') setTab('signup')
     const errorParam = searchParams.get('error')
     const errorDesc = searchParams.get('description')
     if (errorParam) {
       console.error('[Auth] OAuth callback error:', { error: errorParam, description: errorDesc })
-      setError(errorDesc || `Login failed: ${errorParam}`)
+      setError(errorParam === 'profile_schema_missing'
+        ? ONBOARDING_SCHEMA_ERROR
+        : errorDesc || `Login failed: ${errorParam}`)
     }
 
     // Add delay for mobile to ensure cookies are set
@@ -34,8 +63,7 @@ export default function AuthPage() {
           console.warn('[Auth] Session check error:', error)
         }
         if (data?.session) {
-          console.log('[Auth] Existing session found, redirecting to dashboard')
-          router.replace('/dashboard')
+          void routeAuthenticatedUser(data.session.user.id)
         } else {
           console.log('[Auth] No session found, staying on auth page')
         }
@@ -45,14 +73,16 @@ export default function AuthPage() {
     }, 300)
 
     return () => clearTimeout(sessionCheck)
-  }, [router])
+  }, [routeAuthenticatedUser])
 
   async function signInGoogle() {
     setLoading(true)
     setError('')
     console.log('[Auth] Starting Google OAuth flow from:', window.location.origin)
     try {
-      const redirectUrl = `${window.location.origin}/auth/callback`
+      const next = requestedNextPath()
+      const callbackPath = next ? `/auth/callback?next=${encodeURIComponent(next)}` : '/auth/callback'
+      const redirectUrl = `${window.location.origin}${callbackPath}`
       console.log('[Auth] OAuth redirect URL:', redirectUrl)
       
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -97,7 +127,7 @@ export default function AuthPage() {
         if (data.session) {
           console.log('[Auth] Login successful, redirecting to dashboard')
           // Add small delay for mobile to process cookies
-          setTimeout(() => router.replace('/dashboard'), 100)
+          setTimeout(() => void routeAuthenticatedUser(data.session.user.id), 100)
         } else {
           console.warn('[Auth] Login succeeded but no session returned')
           setError('No session returned. Please try again.')
@@ -105,10 +135,12 @@ export default function AuthPage() {
         }
       } else {
         console.log('[Auth] Attempting signup for:', email)
+        const next = requestedNextPath()
+        const emailRedirectTo = `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { name }, emailRedirectTo: `${window.location.origin}/auth/callback` }
+          options: { data: { name }, emailRedirectTo }
         })
         if (error) {
           console.error('[Auth] Signup error:', error)

@@ -100,9 +100,9 @@ export async function executeTool(toolName: KAYVENToolName, input: KAYVENToolInp
 async function toolGetUserProfile(userId: string, supabase: any): Promise<KAYVENToolResult> {
   try {
     const { data: profile, error } = await supabase
-      .from('user_profile')
-      .select('goal, target_calories, target_protein_g, target_carbs_g, target_fat_g')
-      .eq('user_id', userId)
+      .from('profiles')
+      .select('goal, cal_target, protein_target, carb_target, fat_target')
+      .eq('id', userId)
       .maybeSingle()
 
     if (error) return { success: false, data: null, error: error.message }
@@ -113,10 +113,10 @@ async function toolGetUserProfile(userId: string, supabase: any): Promise<KAYVEN
       data: {
         goal: profile.goal || 'Not set',
         targets: {
-          calories: profile.target_calories || null,
-          protein_g: profile.target_protein_g || null,
-          carbs_g: profile.target_carbs_g || null,
-          fat_g: profile.target_fat_g || null
+          calories: profile.cal_target ?? null,
+          protein_g: profile.protein_target ?? null,
+          carbs_g: profile.carb_target ?? null,
+          fat_g: profile.fat_target ?? null
         }
       }
     }

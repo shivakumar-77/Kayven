@@ -145,7 +145,7 @@ export async function checkAndAwardAchievements(userId: string): Promise<string[
   await award('early_adopter')
 
   if (prof) {
-    const fields = [prof.name, prof.dob, prof.height, prof.gender, prof.phone]
+    const fields = [prof.name, prof.dob, prof.height, prof.gender, prof.phone_number]
     if (fields.filter(Boolean).length === 5) await award('profile_complete')
   }
 

@@ -76,12 +76,25 @@ export default function WeightPage() {
     const val = parseFloat(input)
     if (!val || val < 20 || val > 300) { showMsg('Enter a valid weight (20–300 kg)'); return }
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser(); if (!user) return
-    await supabase.from('weight_logs').upsert(
-      { user_id: user.id, logged_at: today, weight_kg: val },
-      { onConflict: 'user_id,logged_at' }
-    )
-    setInput(''); showMsg('Logged!'); setSaving(false); load()
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) { router.replace('/auth'); return }
+      const { data, error } = await supabase.from('weight_logs').upsert(
+        { user_id: user.id, logged_at: today, weight_kg: val },
+        { onConflict: 'user_id,logged_at' }
+      ).select().single()
+      if (error) throw error
+      setLogs(previous => [...previous.filter(log => log.logged_at !== today), data]
+        .sort((a, b) => a.logged_at.localeCompare(b.logged_at)))
+      setInput('')
+      showMsg('Logged!')
+    } catch (error) {
+      console.error('[Weight] Failed to save weight log', error)
+      showMsg('Could not log weight. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function deleteLog(id) {

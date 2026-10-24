@@ -1,18 +1,24 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import BottomNav from '../../components/BottomNav'
 import PageHeader from '../../components/PageHeader'
 import { PLANS, type PlanId } from '../../lib/billing/plans'
-import { getRazorpayPlanConfig, type RazorpayPlanConfig, type BillingPeriod } from '../../lib/billing/razorpay-config'
+import { getRazorpayPlanConfig, type BillingPeriod } from '../../lib/billing/razorpay-config'
+import { canUseFeature, ENTITLEMENT_DEFINITIONS, getAIRequestLimit, getPlanEntitlements, type EntitlementId } from '../../lib/billing/entitlements'
+import { useSubscription } from '../../lib/billing/client'
 
-const PLAN_ORDER: PlanId[] = ['basic', 'standard', 'pro']
+const PLAN_ORDER: PlanId[] = Object.values(PLANS).filter(plan => plan.active).map(plan => plan.id)
 
 export default function SubscriptionPage() {
-  const router = useRouter()
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
   const [isMounted, setIsMounted] = useState(false)
+  const { state: subscriptionState } = useSubscription()
+  const visiblePlans = subscriptionState?.statusUnavailable !== true
+    && subscriptionState?.currentPlan
+    && !PLAN_ORDER.includes(subscriptionState.currentPlan)
+    ? [subscriptionState.currentPlan, ...PLAN_ORDER]
+    : PLAN_ORDER
 
   useEffect(() => {
     setIsMounted(true)
@@ -29,26 +35,25 @@ export default function SubscriptionPage() {
     offerPrice: number
     savingsPercent: number
     savingsAmount: number
-    razorpayLink: string
     effectiveMonthly: number
+    pricingAvailable: boolean
   } => {
     const config = getRazorpayPlanConfig(planId, billingPeriod)
     if (!config) {
-      // Fallback for free plan or missing config
       return {
         mrp: 0,
         offerPrice: 0,
         savingsPercent: 0,
         savingsAmount: 0,
-        razorpayLink: '#',
-        effectiveMonthly: 0
+        effectiveMonthly: 0,
+        pricingAvailable: false,
       }
     }
     
-    const mrp = config.mrp || 0
-    const offerPrice = config.offerPrice || 0
-    const savingsAmount = mrp - offerPrice
-    const savingsPercent = mrp > 0 ? Math.round((savingsAmount / mrp) * 100) : 0
+    const mrp = config.mrp
+    const offerPrice = config.offerPrice
+    const savingsAmount = config.discountAmount
+    const savingsPercent = config.displayDiscountPercentage
     const effectiveMonthly = billingPeriod === 'yearly' ? offerPrice / 12 : offerPrice
     
     return {
@@ -56,58 +61,25 @@ export default function SubscriptionPage() {
       offerPrice,
       savingsPercent,
       savingsAmount,
-      razorpayLink: config.razorpaySubscriptionLink || '#',
-      effectiveMonthly
+      effectiveMonthly,
+      pricingAvailable: true,
     }
   }
 
-  // Get plan details
   const getPlanDetails = (planId: PlanId) => {
     const plan = PLANS[planId]
     const priceInfo = getPlanPriceInfo(planId)
-    
-    // Define feature sets based on plan
-    const featuresByPlan: Record<PlanId, string[]> = {
-      free: [
-        'Core nutrition tracking',
-        'Basic fitness tracking',
-        'Goal setting',
-        'Limited AI Coach requests'
-      ],
-      basic: [
-        'Food tracking',
-        'Basic nutrition insights',
-        'AI Coach',
-        'Meal planning',
-        'Workout planning',
-        'Progress tracking'
-      ],
-      standard: [
-        'Everything in Basic',
-        'Advanced nutrition insights',
-        'AI Coach (advanced)',
-        'Personalized meal planning',
-        'Advanced workout plans',
-        'Progress analytics'
-      ],
-      premium: [
-        'Expanded AI Coach',
-        'Advanced health intelligence',
-        'Legacy features'
-      ],
-      pro: [
-        'Everything in Standard',
-        'Custom AI recommendations',
-        'Performance tracking',
-        'Priority support',
-        '1:1 AI health coach — Coming soon'
-      ]
-    }
-    
+    const entitlements = getPlanEntitlements(planId)
+    const features = (Object.entries(ENTITLEMENT_DEFINITIONS) as Array<[EntitlementId, typeof ENTITLEMENT_DEFINITIONS[EntitlementId]]>)
+      .filter(([feature, definition]) => feature !== 'ai_coach' && definition.availability === 'available' && canUseFeature(entitlements, feature))
+      .map(([, definition]) => definition.label)
+    const aiLimit = getAIRequestLimit(entitlements)
+    features.unshift(aiLimit === null ? 'AI Coach: unlimited requests' : `AI Coach: ${aiLimit} requests per month`)
+
     return {
       ...plan,
       priceInfo,
-      features: featuresByPlan[planId] || []
+      features,
     }
   }
 
@@ -179,7 +151,7 @@ export default function SubscriptionPage() {
               marginLeft: 'auto',
               marginRight: 'auto'
             }}>
-              Personalized nutrition, workouts, progress tracking and AI coaching — all in one place.
+              Track nutrition, hydration, body measurements, and workouts, with AI Coach guidance within your plan limit.
             </p>
             
             {/* Secondary text */}
@@ -261,13 +233,13 @@ export default function SubscriptionPage() {
         }}>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: billingPeriod === 'yearly' && typeof window !== 'undefined' && window.innerWidth >= 768 ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(100%, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
             gap: '16px',
             marginBottom: '24px'
           }}>
-            {PLAN_ORDER.map((planId) => {
+            {visiblePlans.map((planId) => {
               const plan = getPlanDetails(planId)
-              const isMostPopular = planId === 'standard'
+              const isCurrentPlan = subscriptionState?.currentPlan === planId && subscriptionState.statusUnavailable !== true
               
               return (
                 <div 
@@ -277,14 +249,14 @@ export default function SubscriptionPage() {
                     borderRadius: '16px',
                     overflow: 'hidden',
                     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-                    border: isMostPopular ? '2px solid #0f5132' : '1px solid #e0e0e0',
+                    border: '1px solid #e0e0e0',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column'
                   }}
                 >
                   {/* Badge */}
-                  {planId === 'basic' && (
+                  {plan.priceInfo.savingsPercent > 0 && (
                     <div style={{ 
                       position: 'absolute', 
                       top: '16px', 
@@ -297,39 +269,12 @@ export default function SubscriptionPage() {
                       borderRadius: '20px',
                       zIndex: 2
                     }}>
-                      40% OFF
+                      SAVE {plan.priceInfo.savingsPercent}%
                     </div>
                   )}
-                  {planId === 'standard' && (
-                    <div style={{ 
-                      position: 'absolute', 
-                      top: '16px', 
-                      left: '16px',
-                      background: '#0f5132',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      zIndex: 2
-                    }}>
-                      MOST POPULAR
-                    </div>
-                  )}
-                  {planId === 'pro' && (
-                    <div style={{ 
-                      position: 'absolute', 
-                      top: '16px', 
-                      left: '16px',
-                      background: '#0f5132',
-                      color: 'white',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      zIndex: 2
-                    }}>
-                      30% OFF
+                  {isCurrentPlan && (
+                    <div style={{ position: 'absolute', top: 16, right: 16, color: '#0f5132', fontSize: 12, fontWeight: 600 }}>
+                      CURRENT PLAN
                     </div>
                   )}
                   
@@ -371,7 +316,9 @@ export default function SubscriptionPage() {
                         textAlign: 'right',
                         flexShrink: 0
                       }}>
-                        {plan.priceInfo.mrp > 0 && (
+                        {!plan.priceInfo.pricingAvailable ? (
+                          <div style={{ color: '#666', fontSize: 14 }}>Pricing unavailable</div>
+                        ) : plan.priceInfo.mrp > 0 && (
                           <div style={{ 
                             textDecoration: 'line-through', 
                             color: '#999', 
@@ -381,21 +328,21 @@ export default function SubscriptionPage() {
                             ₹{plan.priceInfo.mrp.toLocaleString()}
                           </div>
                         )}
-                        <div style={{ 
+                        {plan.priceInfo.pricingAvailable && <div style={{
                           fontSize: '28px', 
                           fontWeight: '700', 
                           color: '#0f5132',
                           lineHeight: '1'
                         }}>
                           ₹{plan.priceInfo.offerPrice.toLocaleString()}
-                        </div>
-                        <div style={{ 
+                        </div>}
+                        {plan.priceInfo.pricingAvailable && plan.priceInfo.offerPrice > 0 && <div style={{
                           fontSize: '14px', 
                           color: '#666',
                           marginTop: '4px'
                         }}>
                           {billingPeriod === 'monthly' ? '/month' : '/year'}
-                        </div>
+                        </div>}
                       </div>
                     </div>
                     
@@ -431,14 +378,14 @@ export default function SubscriptionPage() {
                     )}
                     
                     {/* Effective monthly price (yearly only) */}
-                    {billingPeriod === 'yearly' && (
+                    {plan.priceInfo.pricingAvailable && plan.priceInfo.offerPrice > 0 && billingPeriod === 'yearly' && (
                       <div style={{ 
                         fontSize: '13px', 
                         color: '#666',
                         textAlign: 'center',
                         marginBottom: '16px'
                       }}>
-                        Effective ₹{plan.priceInfo.effectiveMonthly.toLocaleString()}/month
+                        Effective ₹{plan.priceInfo.effectiveMonthly.toLocaleString('en-IN', { maximumFractionDigits: 2 })}/month
                       </div>
                     )}
                     
@@ -481,24 +428,21 @@ export default function SubscriptionPage() {
                     {/* CTA Button */}
                     <button
                       type="button"
-                      onClick={() => {
-                        window.open(plan.priceInfo.razorpayLink, '_blank', 'noopener')
-                      }}
-                      style={{ 
+                      disabled
+                      aria-label={isCurrentPlan ? `${plan.displayName} is your current plan` : 'Subscription checkout is unavailable'}
+                      style={{
                         width: '100%',
                         padding: '14px',
                         borderRadius: '12px',
                         fontSize: '16px',
                         fontWeight: '600',
-                        border: 'none',
-                        background: '#0f5132',
-                        color: 'white',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                        border: '1px solid #d5d5d5',
+                        background: '#f5f5f5',
+                        color: '#666',
+                        cursor: 'not-allowed',
                       }}
                     >
-                      Get Started →
+                      {isCurrentPlan ? 'Current plan' : 'Checkout unavailable'}
                     </button>
                   </div>
                 </div>
@@ -522,10 +466,8 @@ export default function SubscriptionPage() {
               fontSize: '13px',
               color: '#666'
             }}>
-              <span>✓ Secure payments via Razorpay</span>
-              <span>✓ Cancel anytime</span>
-              <span>✓ Your health data stays private</span>
-              <span>✓ AI-powered personalization</span>
+              <span>Plan prices and features are shown as currently configured</span>
+              <span>Subscription purchase is not available yet</span>
             </div>
           </div>
           
@@ -540,41 +482,9 @@ export default function SubscriptionPage() {
               margin: '0 0 8px 0',
               lineHeight: '1.5'
             }}>
-              Subscriptions renew according to your selected billing period unless cancelled.
+              Prices are informational. Checkout and free trials are unavailable until the subscription provider and terms are verified.
             </p>
-            <div>
-              <a href="/terms" style={{ 
-                color: '#666', 
-                textDecoration: 'none', 
-                margin: '0 8px'
-              }}>
-                Terms
-              </a>
-              <span style={{ color: '#ccc', margin: '0 4px' }}>·</span>
-              <a href="/privacy" style={{ 
-                color: '#666', 
-                textDecoration: 'none', 
-                margin: '0 8px'
-              }}>
-                Privacy
-              </a>
-              <span style={{ color: '#ccc', margin: '0 4px' }}>·</span>
-              <a href="/refunds" style={{ 
-                color: '#666', 
-                textDecoration: 'none', 
-                margin: '0 8px'
-              }}>
-                Refunds
-              </a>
-              <span style={{ color: '#ccc', margin: '0 4px' }}>·</span>
-              <a href="/cancellation" style={{ 
-                color: '#666', 
-                textDecoration: 'none', 
-                margin: '0 8px'
-              }}>
-                Cancellation
-              </a>
-            </div>
+            <p style={{ margin: 0 }}>Review existing Terms and Privacy information from Account &gt; About.</p>
           </div>
         </section>
 

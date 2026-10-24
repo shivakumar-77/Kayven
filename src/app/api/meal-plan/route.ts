@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createSupabaseServerClient } from '@/lib/server/supabase'
+import { runMeteredAI } from '@/lib/billing/server'
+import { meteredAIFailureResponse } from '@/lib/server/ai-quota-response'
+import { isValidAIIdempotencyKey } from '@/lib/server/ai-idempotency'
 
 function normalizePlan(plan: any) {
   if (!plan || !Array.isArray(plan.meals) || plan.meals.length < 4) return null
@@ -31,7 +35,14 @@ function normalizePlan(plan: any) {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createSupabaseServerClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const idempotencyKey = req.headers.get('Idempotency-Key')
+    if (!isValidAIIdempotencyKey(idempotencyKey)) return NextResponse.json({ error: 'AI_IDEMPOTENCY_KEY_REQUIRED' }, { status: 400 })
+
     const { targets, profile, preferences, customPrompt } = await req.json()
+    if ((!customPrompt && !targets) || (customPrompt !== undefined && (typeof customPrompt !== 'string' || customPrompt.length > 4000))) return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: 'No key' }, { status: 503 })
 
     const prompt = customPrompt || `Create a full day meal plan for a ${profile?.gender||'person'}, goal: ${profile?.goal||'lose weight'}.
@@ -40,27 +51,38 @@ Cuisine: Indian / Mixed. Return valid JSON only with meals array containing Brea
 Each meal has: type, time, emoji, exactly four genuinely different options. Each option has name, ingredients (name and exact quantity), nutrition (calories, protein, carbs, fat, fiber), recipe steps, and tip.
 Also include: summary, day_total_cal, day_total_protein, shopping_list, hydration_tip, pro_tip.`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:2500,
-        messages:[{role:'user',content:prompt+'\n\nReturn ONLY valid JSON. No markdown, no explanation.'}]
-      })
+    type PlanOutcome = { response: NextResponse } | { result: unknown }
+    const outcome = await runMeteredAI<PlanOutcome>({
+      supabase,
+      userId: user.id,
+      feature: 'ai_coach',
+      idempotencyKey,
+      execute: async () => {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':process.env.ANTHROPIC_API_KEY as string,'anthropic-version':'2023-06-01'},
+          body: JSON.stringify({
+            model:'claude-sonnet-4-6',
+            max_tokens:2500,
+            messages:[{role:'user',content:prompt+'\n\nReturn ONLY valid JSON. No markdown, no explanation.'}]
+          }),
+          signal: AbortSignal.timeout(60000)
+        })
+        if (!response.ok) return { value: { response: NextResponse.json({ error: 'AI error' }, { status: 502 }) }, billable: false }
+        const data = await response.json()
+        const text = data.content?.[0]?.text??''
+        let result = null
+        try {
+          result = JSON.parse(text.replace(/```json|```/g,'').trim())
+        } catch { result = null }
+        const normalized = normalizePlan(result)
+        if (!normalized) return { value: { response: NextResponse.json({ error: 'Could not generate a complete four-option plan' }, { status: 422 }) }, billable: false }
+        return { value: { result: normalized }, billable: true }
+      },
     })
-
-    if (!response.ok) return NextResponse.json({ error: 'AI error' }, { status: 502 })
-    const data = await response.json()
-    const text = data.content?.[0]?.text??''
-    let result = null
-    try {
-      const clean = text.replace(/```json|```/g,'').trim()
-      result = JSON.parse(clean)
-    } catch { result = null }
-    const normalized = normalizePlan(result)
-    if (!normalized) return NextResponse.json({ error: 'Could not generate a complete four-option plan' }, { status: 422 })
-    return NextResponse.json({ result: normalized })
+    if (outcome.status !== 'ok') return meteredAIFailureResponse(outcome)
+    if ('response' in outcome.value) return outcome.value.response
+    return NextResponse.json({ result: outcome.value.result })
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }

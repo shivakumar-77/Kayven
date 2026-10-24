@@ -94,6 +94,7 @@ function ActiveWorkoutPageContent() {
   const [exSearch, setExSearch] = useState('')
   const [exCat, setExCat] = useState('All')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [restActive, setRestActive] = useState(false)
   const [restTotal, setRestTotal] = useState(120)
   const [restElapsed, setRestElapsed] = useState(0)
@@ -257,18 +258,28 @@ function ActiveWorkoutPageContent() {
 
   async function finishWorkout() {
     setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser(); if (!user) return
-    await supabase.from('workout_logs').insert({
-      user_id: user.id, name,
-      started_at: new Date(startTime).toISOString(),
-      finished_at: new Date().toISOString(),
-      duration_seconds: elapsed,
-      total_volume_kg: totalVolume(),
-      exercises
-    })
-    localStorage.removeItem('Kayven_active_workout')
-    setSaving(false)
-    router.push('/workout')
+    setSaveError('')
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+      if (!user) { router.replace('/auth'); return }
+      const { error } = await supabase.from('workout_logs').insert({
+        user_id: user.id, name,
+        started_at: new Date(startTime).toISOString(),
+        finished_at: new Date().toISOString(),
+        duration_seconds: elapsed,
+        total_volume_kg: totalVolume(),
+        exercises
+      })
+      if (error) throw error
+      localStorage.removeItem('Kayven_active_workout')
+      router.push('/workout')
+    } catch (error) {
+      console.error('[Workout] Failed to save workout', error)
+      setSaveError('Workout was not saved. Your active workout is still available; please retry.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const completedSets = exercises.reduce((s, e) => s + e.sets.filter((s: any) => s.done).length, 0)
@@ -323,6 +334,7 @@ function ActiveWorkoutPageContent() {
             {saving ? '…' : 'Finish'}
           </button>
         </div>
+        {saveError && <p role="alert" style={{ color: '#dc2626', fontSize: 13, margin: '8px 0', textAlign: 'center' }}>{saveError}</p>}
 
         {/* Progress bar */}
         <div style={{ height: 4, background: 'var(--card2)', borderRadius: 2, overflow: 'hidden' }}>

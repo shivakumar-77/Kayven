@@ -20,14 +20,19 @@ function formatDate(value: string | null): string | null {
 export default function SubscriptionStatusCard({ state, managementUrl, onRefresh, refreshing }: SubscriptionStatusCardProps) {
   const [confirming, setConfirming] = useState(false)
   const currentPeriodEnd = formatDate(state.currentPeriodEnd)
+  const periodEndIsFuture = state.currentPeriodEnd !== null && Date.parse(state.currentPeriodEnd) > Date.now()
   const isFree = state.currentPlan === 'free'
-  const isCanceling = state.cancelAtPeriodEnd && state.subscriptionStatus === 'active'
+  const isCanceling = state.cancelAtPeriodEnd
+    && periodEndIsFuture
+    && (state.subscriptionStatus === 'active' || state.subscriptionStatus === 'canceled')
   const statusLabel = isCanceling
     ? 'Canceling at period end'
     : state.subscriptionStatus === 'trialing'
       ? 'Trialing'
       : state.subscriptionStatus === 'past_due'
         ? 'Billing issue'
+        : state.subscriptionStatus === 'canceled'
+          ? 'Canceled'
         : state.subscriptionStatus === 'expired'
           ? 'Expired'
           : isFree ? 'Free' : 'Active'

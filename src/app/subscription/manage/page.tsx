@@ -6,8 +6,7 @@ import BottomNav from '@/components/BottomNav'
 import PageHeader from '@/components/PageHeader'
 import SubscriptionStatusCard from '@/components/SubscriptionStatusCard'
 import AIUsageMeter from '@/components/AIUsageMeter'
-import { authenticatedBillingFetch, refreshSubscription, useSubscription } from '@/lib/billing/client'
-import { getRazorpayPlanConfig, type RazorpayPlanConfig, type BillingPeriod } from '@/lib/billing/razorpay-config'
+import { refreshSubscription, useSubscription } from '@/lib/billing/client'
 
 import UpgradePrompt from '@/components/UpgradePrompt'
 
@@ -15,11 +14,15 @@ export default function SubscriptionManagePage() {
   const router = useRouter()
   const { state, loading, error } = useSubscription()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
+    setRefreshError(null)
     try {
       await refreshSubscription()
+    } catch {
+      setRefreshError('Unable to refresh subscription details. Please try again.')
     } finally {
       setIsRefreshing(false)
     }
@@ -73,7 +76,7 @@ export default function SubscriptionManagePage() {
           <UpgradePrompt
             title="Start your subscription"
             message="Choose a plan to access all features"
-            suggestedPlan="premium"
+            suggestedPlan="basic"
             context="feature_locked"
           />
         </div>
@@ -88,10 +91,11 @@ export default function SubscriptionManagePage() {
       <div style={{ padding: 20 }}>
         <SubscriptionStatusCard
           state={state}
-          managementUrl="/subscription/billing-portal"
+          managementUrl={state.managementUrlAvailable ? state.managementUrl : null}
           onRefresh={handleRefresh}
           refreshing={isRefreshing}
         />
+        {refreshError && <p role="alert" style={{ color: 'var(--orange)', marginTop: 10 }}>{refreshError}</p>}
 
         {/* Add some spacing */}
         <div style={{ height: 24 }}></div>
@@ -102,12 +106,11 @@ export default function SubscriptionManagePage() {
         <div style={{ height: 24 }}></div>
 
         {/* Upgrade prompt for free users or those with limits */}
-        {(state.currentPlan === 'free' ||
-          (state.subscriptionStatus === 'active' && state.aiLimit !== null)) && (
+        {['free', 'basic', 'premium'].includes(state.currentPlan) && (
           <UpgradePrompt
             title="Unlock more features"
             message="Upgrade your plan to access premium features and higher limits"
-            suggestedPlan="premium"
+            suggestedPlan={state.currentPlan === 'free' ? 'basic' : 'standard'}
             context="feature_locked"
           />
         )}

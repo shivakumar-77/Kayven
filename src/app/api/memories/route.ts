@@ -10,7 +10,7 @@ import {
 export const dynamic = 'force-dynamic'
 
 async function getAuthenticatedUser() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {

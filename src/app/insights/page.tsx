@@ -6,6 +6,7 @@ import BottomNav from '@/components/BottomNav'
 import { PageLoader } from '@/components/Skeleton'
 import UpgradePrompt from '@/components/UpgradePrompt'
 import { useEntitlement } from '@/lib/billing/client'
+import { fetchMeteredAI } from '@/lib/client/metered-ai-fetch'
 
 export default function InsightsPage() {
   const router = useRouter()
@@ -57,13 +58,10 @@ export default function InsightsPage() {
     }
     setLoading(true)
     try {
-      const res = await fetch('/api/insights', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
+      const res = await fetchMeteredAI('/api/insights', {
           weeklyLogs,
           targets:{ cal:prof.cal_target, protein:prof.protein_target, carb:prof.carb_target, fat:prof.fat_target },
           profile:prof
-        })
       })
       const data = await res.json()
       if (data.error === 'FEATURE_NOT_AVAILABLE') {
@@ -230,7 +228,7 @@ export default function InsightsPage() {
 
         {insights&&!loading&&(
           <>
-            {insights.locked ? <UpgradePrompt context="feature_locked" suggestedPlan="premium" title="Advanced progress insights" message={insights.message || 'Advanced progress insights are available with KAYVEN Premium.'} /> : <>
+            {insights.locked ? <UpgradePrompt context="feature_locked" suggestedPlan="standard" title="Advanced progress insights" message={insights.message || 'Advanced progress insights are available on the Standard plan.'} /> : <>
             {/* Score card */}
             <div style={{background:'linear-gradient(135deg,#10b981,#059669)',borderRadius:20,padding:'20px',marginBottom:16,color:'#fff'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>

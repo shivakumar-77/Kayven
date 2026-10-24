@@ -60,6 +60,7 @@ export function mapRevenueCatProductToPlan(productId: string | null | undefined,
 
 export function normalizeRevenueCatStatus(event: RevenueCatEventPayload): SubscriptionStatus {
   const type = String(event.type || '').toUpperCase()
+  if (type === 'UNCANCELLATION') return 'active'
   if (type.includes('BILLING_ISSUE')) return 'past_due'
   if (type.includes('EXPIRE')) return 'expired'
   if (type.includes('CANCEL')) return 'canceled'

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { fetchMeteredAI } from '@/lib/client/metered-ai-fetch'
 import BottomNav from '@/components/BottomNav'
 import { SaladIcon, FoodIcon, SunriseIcon, SunIcon, MoonIcon, AppleIcon, WarningIcon, TimerIcon, PencilIcon, LightbulbIcon, CartIcon } from '@/lib/icons'
 
@@ -194,9 +195,8 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
 }`
 
     try {
-      const res = await fetch('/api/meal-plan', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ targets:{ cal:profile.cal_target||1700, protein:profile.protein_target||167, carb:profile.carb_target||144, fat:profile.fat_target||60 }, profile, preferences:prefs, customPrompt:prompt })
+      const res = await fetchMeteredAI('/api/meal-plan', {
+        targets:{ cal:profile.cal_target||1700, protein:profile.protein_target||167, carb:profile.carb_target||144, fat:profile.fat_target||60 }, profile, preferences:prefs, customPrompt:prompt
       })
       const data = await res.json()
       if (data.result) {
@@ -207,7 +207,7 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
         setStep('plan')
       } else {
         setStep('quiz'); setQuizStep(0)
-        alert('Could not generate plan. Please try again.')
+        alert(data?.error === 'AI_USAGE_LIMIT_REACHED' ? data.message : 'Could not generate plan. Please try again.')
       }
     } catch {
       setStep('quiz'); setQuizStep(0)

@@ -1,6 +1,6 @@
 # KAYVEN Billing Architecture
 
-Billing is provider-independent. RevenueCat, Stripe, or another provider can later update `subscriptions`; feature checks do not need to change.
+Billing rules and plan prices are centralized in `src/lib/billing/plans.ts`. RevenueCat synchronization is retained for mapped legacy subscriptions. New checkout and trial enrollment remain disabled until a billing provider, account ownership, and customer terms are verified.
 
 ## Local development override
 
@@ -15,25 +15,32 @@ The override is honored only when `NODE_ENV` is not `production` and only for th
 
 ## Database setup
 
-Apply the subscription and usage additions in `supabase-schema.sql` to Supabase. The schema creates:
+Apply the subscription, usage, and sleep-log additions in `supabase-schema.sql` to a database only after review. The schema creates:
 
 - `subscriptions` for provider-independent subscription state
 - `ai_usage` for monthly per-user AI request/token/cost totals
-- `record_ai_usage(...)` for an authenticated, atomic usage increment
+- `reserve_ai_usage(...)` for atomic, service-role-only quota increments and reservation IDs
+- `reserve_ai_usage_idempotent(...)` for service-role-only reservation by a stable per-request key
+- `commit_ai_usage_reservation(...)` and `release_ai_usage_reservation(...)` for idempotent finalization by reservation ID
 
-Subscription writes are intentionally not exposed through the application yet. A future provider webhook or trusted server integration should update `subscriptions`.
+Apply the additive migrations in order after reviewing the target database. No migrations have been applied to a live database by this implementation.
 
 ## AI usage behavior
 
 - Local and deterministic responses do not consume AI quota.
-- A successful external provider response consumes one request.
-- Failed provider calls do not consume quota.
-- Free, premium, and pro limits are configured in `src/lib/billing/plans.ts`.
-- Missing billing data safely resolves to the free plan.
+- An external AI request reserves quota atomically before provider work.
+- Failed or empty provider responses release the reservation; successful external AI usage commits it.
+- Commit and release calls are idempotent by reservation ID. If cleanup fails, the failure is logged and the reservation remains charged rather than granting unverified quota.
+- Metered API requests require a UUID `Idempotency-Key`. First-party clients reuse the key for an ambiguous retry of the same endpoint and payload. A duplicate key returns a safe `409` without repeating provider work; the browser retains that key after a `409` because the original operation may still be active or its result unavailable. Results are not replayed, so a new intentional operation needs a new key.
+- After an ambiguous `409`, the browser intentionally keeps the key for that payload. To deliberately run the identical payload as a new operation, the user must start a fresh browser session or clear the session-scoped idempotency entry; different payloads get different keys automatically.
+- The request key is stored on the reservation row and unique per user. It prevents duplicate reservation/provider execution when clients reuse the key, but does not make external provider execution exactly-once and does not preserve a response for replay.
+- Storage or quota-verification errors fail closed; they do not grant a zero-usage fallback.
+- Free, Basic, Standard, and legacy plan limits are configured in `src/lib/billing/plans.ts`.
+- A missing subscription row resolves to the Free plan; a database error is surfaced instead of being treated as a missing row.
 
 ## Future provider environment variables
 
-These server-side variables are required only when RevenueCat API/webhook integration is enabled:
+These server-side variables are required for RevenueCat synchronization:
 
 ```text
 REVENUECAT_SECRET_API_KEY=
@@ -92,16 +99,16 @@ The existing weekly AI progress analysis endpoint is protected by the server-sid
 
 ## Subscription management
 
-Subscription management is available at `/subscription/manage`. The page reads normalized state from `/api/subscription` and uses the RevenueCat Web SDK `CustomerInfo.managementURL` only when RevenueCat provides a real management destination. KAYVEN never constructs provider URLs or writes cancellation state from the browser.
+Subscription management is available at `/subscription/manage`. The page reads normalized state from `/api/subscription`. No provider management URL is currently exposed, so the page does not offer a cancellation action or construct provider URLs.
 
 If a provider management URL is unavailable, the page explains that management is handled by the billing provider and does not show a fake cancellation action. A confirmation panel appears before opening a verified management URL.
 
-Restore and refresh actions are bounded, authenticated, and server-aware. A RevenueCat customer update is followed by `POST /api/subscription/refresh` and a refresh of the Supabase mirror. Access is not described as active until the server response confirms it.
+Refresh is authenticated and server-aware. A RevenueCat customer update is followed by `POST /api/subscription/refresh` and a read of the Supabase mirror. Access is not described as active until the server response confirms it.
 
 Canceled subscriptions retain paid access through the verified `current_period_end` when `cancel_at_period_end` is true. Expired or inactive subscription states resolve to Free entitlements while preserving the normalized status for management messaging.
 
 ## Sandbox and production
 
-Use separate RevenueCat projects/keys and product IDs for sandbox and production. No real purchase can be made from the current web UI. Mobile SDK purchase and restore flows are future work.
+Use separate RevenueCat projects/keys and product IDs for sandbox and production. The web Plans page is informational; new purchases and trials are disabled. The legacy Razorpay order, verification, and webhook endpoints return `410 Gone` and do not process payments.
 
-Apply the `subscriptions`, `ai_usage`, `billing_webhook_events`, RLS, indexes, constraints, and `record_ai_usage` function from `supabase-schema.sql` before enabling webhook processing.
+The baseline still defines the legacy `record_ai_usage` RPC, but application code does not call it and user roles cannot execute it. Do not grant it to application roles; the current AI path uses the reservation RPCs above. Check for external service-role consumers before removing it.
