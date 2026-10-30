@@ -1,6 +1,8 @@
 # KAYVEN Billing Architecture
 
-Billing rules and plan prices are centralized in `src/lib/billing/plans.ts`. RevenueCat synchronization is retained for mapped legacy subscriptions. New checkout and trial enrollment remain disabled until a billing provider, account ownership, and customer terms are verified.
+Plan features and the AI Coach allowances currently enforced by the app are centralized in `src/lib/billing/plans.ts`. Paid product prices are read from RevenueCat packages; the app does not invent a currency or price.
+
+`KAYVEN_WEB_CHECKOUT_ENABLED` must remain `false` until the selected provider, products, customer terms, market eligibility, taxes, and sandbox lifecycle are verified. The RevenueCat webhook now applies subscription state through a service-only, atomic timestamp guard; this repository change does not verify the provider dashboard or authorize production purchases.
 
 ## Local development override
 
@@ -15,7 +17,7 @@ The override is honored only when `NODE_ENV` is not `production` and only for th
 
 ## Database setup
 
-Apply the subscription, usage, and sleep-log additions in `supabase-schema.sql` to a database only after review. The schema creates:
+`supabase-schema.sql` is the repository's baseline/reference schema for a new database. Do not apply it wholesale to an existing production database. For an existing environment, review its schema and migration history, then apply only the ordered, additive migrations that are missing and compatible. No migrations have been applied to a live database by this implementation. The schema includes:
 
 - `subscriptions` for provider-independent subscription state
 - `ai_usage` for monthly per-user AI request/token/cost totals
@@ -23,7 +25,9 @@ Apply the subscription, usage, and sleep-log additions in `supabase-schema.sql` 
 - `reserve_ai_usage_idempotent(...)` for service-role-only reservation by a stable per-request key
 - `commit_ai_usage_reservation(...)` and `release_ai_usage_reservation(...)` for idempotent finalization by reservation ID
 
-Apply the additive migrations in order after reviewing the target database. No migrations have been applied to a live database by this implementation.
+Apply additive migrations in order only after reviewing the target schema and migration history. Do not reset data to reconcile migration drift.
+
+`20261025010000_subscription_billing_period.sql` creates `subscriptions` and `billing_webhook_events` only when absent, adds nullable `billing_period` and `provider_event_timestamp` columns, and applies the billing access policies, indexes, and the service-role-only `apply_revenuecat_subscription_event(...)` RPC. The RPC only applies a provider event if its timestamp is newer than the timestamp already stored for that subscription. It requires the existing `public.profiles` table and Supabase roles/auth helpers. Review existing subscription rows before applying: the unique indexes can fail if duplicate provider subscription IDs or multiple current subscriptions per user already exist. This migration is additive and does not drop or reset billing data.
 
 ## AI usage behavior
 
@@ -52,6 +56,12 @@ REVENUECAT_PREMIUM_MONTHLY_PRODUCT_ID=
 REVENUECAT_PREMIUM_YEARLY_PRODUCT_ID=
 REVENUECAT_PRO_MONTHLY_PRODUCT_ID=
 REVENUECAT_PRO_YEARLY_PRODUCT_ID=
+REVENUECAT_BASIC_MONTHLY_PRODUCT_ID=
+REVENUECAT_BASIC_YEARLY_PRODUCT_ID=
+REVENUECAT_STANDARD_MONTHLY_PRODUCT_ID=
+REVENUECAT_STANDARD_YEARLY_PRODUCT_ID=
+REVENUECAT_PRO_AI_MONTHLY_PRODUCT_ID=
+REVENUECAT_PRO_AI_YEARLY_PRODUCT_ID=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
@@ -63,13 +73,21 @@ NEXT_PUBLIC_REVENUECAT_PREMIUM_MONTHLY_PRODUCT_ID=
 NEXT_PUBLIC_REVENUECAT_PREMIUM_YEARLY_PRODUCT_ID=
 NEXT_PUBLIC_REVENUECAT_PRO_MONTHLY_PRODUCT_ID=
 NEXT_PUBLIC_REVENUECAT_PRO_YEARLY_PRODUCT_ID=
+NEXT_PUBLIC_REVENUECAT_BASIC_MONTHLY_PRODUCT_ID=
+NEXT_PUBLIC_REVENUECAT_BASIC_YEARLY_PRODUCT_ID=
+NEXT_PUBLIC_REVENUECAT_STANDARD_MONTHLY_PRODUCT_ID=
+NEXT_PUBLIC_REVENUECAT_STANDARD_YEARLY_PRODUCT_ID=
+NEXT_PUBLIC_REVENUECAT_PRO_AI_MONTHLY_PRODUCT_ID=
+NEXT_PUBLIC_REVENUECAT_PRO_AI_YEARLY_PRODUCT_ID=
 ```
 
 Never put RevenueCat secrets or `SUPABASE_SERVICE_ROLE_KEY` in a `NEXT_PUBLIC_*` variable.
 
 ## RevenueCat mapping
 
-Product IDs are read from server environment variables and mapped only to `premium` or `pro`. Active entitlement priority is deterministic: `pro` wins over `premium`. Unknown products and entitlements resolve to Free.
+Basic, Standard, and Pro AI monthly/yearly product IDs must match exactly between server and public variables before web checkout can be considered. The product identifiers must also exist in the selected RevenueCat offering as subscription packages; the UI matches the package's web product identifier exactly and will not guess a product or period. Duplicate product IDs are treated as unmapped. Existing Premium and Pro product IDs remain mapped as non-purchasable legacy products. Active entitlement priority is deterministic: Pro, Standard, Basic, then legacy Premium. Unknown products and entitlements resolve to Free. Free-trial and introductory-price packages are rejected in both the Plans UI and the purchase helper unless their terms are separately approved and the guard is deliberately updated.
+
+The UI displays `webBillingProduct.price.formattedPrice` as returned by the SDK. India/INR and US/USD offerings, store products, regional eligibility, taxes, and final checkout terms must be verified in the provider dashboard and sandbox; a locale or country is never used to fabricate a currency or price. No live offerings were available to verify during this implementation.
 
 ## Webhook
 
@@ -78,6 +96,8 @@ Configure RevenueCat to send authorized events to:
 ```text
 POST /api/webhooks/revenuecat
 ```
+
+The event ID is recorded with a unique `(provider, provider_event_id)` constraint. A processed duplicate is acknowledged without reapplying it; an in-progress duplicate is retried by the provider. Subscription writes use RevenueCat's `event_timestamp_ms` and the atomic RPC so a late older event cannot overwrite a newer event for the same provider subscription. The timestamp contract is documented in [RevenueCat's webhook event fields](https://www.revenuecat.com/docs/integrations/webhooks/event-types-and-fields). Validate this lifecycle against a sandbox before considering checkout.
 
 The endpoint verifies `Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>`, records `(provider, event_id)` for idempotency, and updates the Supabase subscription mirror through a service-role client. It does not expose provider payloads to clients.
 
@@ -109,6 +129,10 @@ Canceled subscriptions retain paid access through the verified `current_period_e
 
 ## Sandbox and production
 
-Use separate RevenueCat projects/keys and product IDs for sandbox and production. The web Plans page is informational; new purchases and trials are disabled. The legacy Razorpay order, verification, and webhook endpoints return `410 Gone` and do not process payments.
+Use separate RevenueCat projects/keys and product IDs for sandbox and production. The Plans page displays provider prices only when mapped packages are available. Purchase and trial enrollment are disabled by default; do not enable the checkout flag until all launch blockers above are closed and reviewed. The UI also refuses paid-plan changes for an existing paid subscriber because upgrade/downgrade behavior has not been verified. The legacy Razorpay order, verification, and webhook endpoints return `410 Gone` and do not process payments.
+
+Payment history, invoices, refunds, and cancellation links are not implemented in Kayven. The management page reports this limitation rather than fabricating records or actions.
+
+Billing analytics are not integrated with PostHog in this implementation. Do not rely on billing conversion or revenue events being recorded by Kayven.
 
 The baseline still defines the legacy `record_ai_usage` RPC, but application code does not call it and user roles cannot execute it. Do not grant it to application roles; the current AI path uses the reservation RPCs above. Check for external service-role consumers before removing it.

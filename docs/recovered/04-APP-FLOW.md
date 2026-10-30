@@ -10,6 +10,8 @@ Core user flows are implemented and functional:
 - **Authentication**: Email/password and Google OAuth via Supabase Auth
 - **Onboarding**: 3-step process for goal/body/activity setup
 - **Dashboard**: Home screen with calorie/macronutrient rings, water tracking, AI suggestions
+- **Activity**: Daily manual step totals, configurable goals, foreground GPS walk/run sessions, and activity history
+- **Sleep**: Manual overnight sleep logging, configurable duration goals, history, and recorded-duration trends
 - **Food Logging**: Multiple entry methods (manual search, AI image scan, barcode scanner, favorites)
 - **Measurement Tracking**: Body measurements with historical charts and progress tracking
 - **Progress Tracking**: Achievements, streaks, weekly challenges, workout logging

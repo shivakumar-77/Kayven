@@ -14,7 +14,7 @@ export async function syncSubscriptionState(
   if (!state) {
     const { error } = await supabase
       .from('subscriptions')
-      .update({ plan_id: 'free', status: 'expired', updated_at: new Date().toISOString() })
+      .update({ plan_id: 'free', billing_period: null, status: 'expired', updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('provider', provider.name)
     if (error) {

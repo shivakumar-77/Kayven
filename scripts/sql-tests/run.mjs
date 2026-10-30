@@ -20,6 +20,8 @@ const MIGRATIONS = [
   'supabase/migrations/20261018010000_ai_usage_idempotency.sql',
   'supabase/migrations/20261018020000_app_data_tables.sql',
   'supabase/migrations/20261024000000_onboarding_profile_state.sql',
+  'supabase/migrations/20261025000000_health_activity_sleep_tracking.sql',
+  'supabase/migrations/20261025010000_subscription_billing_period.sql',
 ]
 
 // Minimal stand-ins for what Supabase provides (roles, auth.role()) plus the
@@ -29,10 +31,26 @@ await db.exec(`
   create role anon nologin; create role authenticated nologin; create role service_role nologin;
   create schema auth;
   create function auth.role() returns text language sql stable as $$ select nullif(current_setting('request.jwt.claim.role', true), '') $$;
-  create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
+  create function auth.uid() returns uuid language sql stable as $$
+    select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+  $$;
   grant usage on schema public, auth to anon, authenticated, service_role;
   create table public.profiles (id uuid primary key, created_at timestamptz default now(), age integer, height numeric);
   insert into public.profiles (id, age, height) values ('00000000-0000-0000-0000-0000000000c1', 31, 172), ('00000000-0000-0000-0000-0000000000c2', null, null);
+  create table public.sleep_logs (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid not null references public.profiles(id) on delete cascade,
+    sleep_date date not null,
+    started_at timestamptz not null,
+    ended_at timestamptz not null,
+    duration_minutes integer not null check (duration_minutes between 1 and 1440),
+    created_at timestamptz not null default now(),
+    check (ended_at > started_at)
+  );
+  insert into public.sleep_logs(user_id, sleep_date, started_at, ended_at, duration_minutes)
+  values
+    ('00000000-0000-0000-0000-0000000000c1', '2026-10-01', '2026-10-01T00:00:00Z', '2026-10-01T08:00:00Z', 480),
+    ('00000000-0000-0000-0000-0000000000c1', '2026-10-01', '2026-10-01T00:00:00Z', '2026-10-01T08:00:00Z', 480);
   ${aiUsageTable}
 `)
 
@@ -136,11 +154,50 @@ assert.deepEqual(compatibility.rows[0], {
   workout_timestamp: true,
   template_timestamp: true,
 })
+const preservedSleepRecords = await db.query(
+  `select count(*)::int as count from public.sleep_logs where user_id = '00000000-0000-0000-0000-0000000000c1'`,
+)
+assert.equal(preservedSleepRecords.rows[0].count, 2, 'legacy sleep rows must be preserved without deduplication')
+const billingColumns = await db.query(`
+  select column_name from information_schema.columns
+  where table_schema = 'public' and table_name = 'subscriptions'
+`)
+assert.ok(billingColumns.rows.some(row => row.column_name === 'billing_period'), 'subscriptions must retain the billing interval')
+const billingPrivileges = await db.query(`
+  select
+    has_table_privilege('anon', 'public.subscriptions', 'select') as anon_can_read_subscriptions,
+    has_table_privilege('authenticated', 'public.subscriptions', 'select') as user_can_read_subscriptions,
+    has_table_privilege('authenticated', 'public.subscriptions', 'insert') as user_can_insert_subscriptions,
+    has_table_privilege('authenticated', 'public.billing_webhook_events', 'select') as user_can_read_webhooks,
+    has_table_privilege('service_role', 'public.billing_webhook_events', 'insert') as service_can_write_webhooks
+    ,has_function_privilege('anon', 'public.apply_revenuecat_subscription_event(uuid,text,text,text,text,timestamptz,timestamptz,boolean,bigint)', 'execute') as anon_can_apply_billing_event
+    ,has_function_privilege('authenticated', 'public.apply_revenuecat_subscription_event(uuid,text,text,text,text,timestamptz,timestamptz,boolean,bigint)', 'execute') as user_can_apply_billing_event
+    ,has_function_privilege('service_role', 'public.apply_revenuecat_subscription_event(uuid,text,text,text,text,timestamptz,timestamptz,boolean,bigint)', 'execute') as service_can_apply_billing_event
+`)
+assert.deepEqual(billingPrivileges.rows[0], {
+  anon_can_read_subscriptions: false,
+  user_can_read_subscriptions: true,
+  user_can_insert_subscriptions: false,
+  user_can_read_webhooks: false,
+  service_can_write_webhooks: true,
+  anon_can_apply_billing_event: false,
+  user_can_apply_billing_event: false,
+  service_can_apply_billing_event: true,
+}, 'billing tables must retain least-privilege grants')
 
 const A = '00000000-0000-0000-0000-00000000000a'
 const B = '00000000-0000-0000-0000-00000000000b'
+const C = '00000000-0000-0000-0000-00000000000c'
 const P1 = '2026-10-01T00:00:00Z', P1_END = '2026-11-01T00:00:00Z'
 const P0 = '2026-09-01T00:00:00Z', P0_END = '2026-10-01T00:00:00Z'
+
+await db.query(`insert into profiles(id) values ($1), ($2) on conflict do nothing`, [A, B])
+await db.query(`insert into profiles(id) values ($1) on conflict do nothing`, [C])
+await db.query(`
+  insert into public.subscriptions(user_id, provider, plan_id, billing_period, status)
+  values ($1, 'revenuecat', 'basic', 'monthly', 'active'),
+         ($2, 'revenuecat', 'standard', 'yearly', 'active')
+`, [A, B])
 
 async function as(role, fn) {
   await db.exec(`set role ${role}`)
@@ -150,7 +207,28 @@ async function as(role, fn) {
     await db.query(`select set_config('request.jwt.claim.role', '', false)`)
   }
 }
+await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [A])
+const visibleSubscriptions = await as('authenticated', () => db.query('select user_id from public.subscriptions'))
+assert.deepEqual(visibleSubscriptions.rows, [{ user_id: A }], 'users must only read their own subscription')
 const svc = fn => as('service_role', fn)
+const applyRevenueCatEvent = (planId, timestamp, status = 'active') =>
+  svc(async () => (await db.query(`
+    select public.apply_revenuecat_subscription_event(
+      $1, 'rc-original-transaction', $2, 'monthly', $3,
+      $4::timestamptz, $5::timestamptz, false, $6
+    ) as applied
+  `, [C, planId, status, P1, P1_END, timestamp])).rows[0].applied)
+assert.equal(await applyRevenueCatEvent('basic', 1800000000000), true, 'first RevenueCat event should create a subscription record')
+assert.equal(await applyRevenueCatEvent('standard', 1800000001000), true, 'newer RevenueCat event should update the subscription record')
+assert.equal(await applyRevenueCatEvent('free', 1800000000500, 'expired'), false, 'older RevenueCat event must not overwrite newer state')
+const orderedSubscription = await db.query(`
+  select plan_id, status, provider_event_timestamp
+  from public.subscriptions
+  where user_id = $1 and provider = 'revenuecat'
+`, [C])
+assert.equal(orderedSubscription.rows[0].plan_id, 'standard', 'the latest provider event plan must remain authoritative')
+assert.equal(orderedSubscription.rows[0].status, 'active', 'the latest provider event status must remain authoritative')
+assert.equal(new Date(orderedSubscription.rows[0].provider_event_timestamp).getTime(), 1800000001000, 'the latest provider event timestamp must remain authoritative')
 const reserve = (user, limit, start = P1, end = P1_END) =>
   svc(async () => (await db.query('select * from reserve_ai_usage($1,$2,$3,$4)', [user, start, end, limit])).rows[0])
 const reserveIdempotent = (user, key, limit, start = P1, end = P1_END) =>
@@ -171,6 +249,7 @@ const rejects = async (fn, pattern) => {
 }
 const reset = async () => {
   await db.exec('truncate ai_usage_reservations, ai_usage')
+  await db.exec('truncate activity_sessions, activity_daily_summaries, health_tracking_preferences, sleep_logs')
   await db.exec(`insert into profiles(id) values ('${A}'),('${B}') on conflict do nothing`)
 }
 
@@ -372,6 +451,10 @@ test('app data relations have RLS and least-privilege table grants', async () =>
     'water_logs',
     'workout_logs',
     'workout_templates',
+    'sleep_logs',
+    'health_tracking_preferences',
+    'activity_daily_summaries',
+    'activity_sessions',
   ]
 
   for (const table of tables) {
@@ -434,6 +517,81 @@ test('existing personal records can be upserted by user and exercise', async () 
   await db.query(query, [A])
   const { rows } = await db.query('select count(*)::int as count from public.exercise_prs where user_id = $1 and exercise_id = $2', [A, 'squat'])
   assert.equal(rows[0].count, 1)
+})
+
+test('health tracking data has bounded values and duplicate safeguards', async () => {
+  await db.query(`insert into health_tracking_preferences(user_id) values ($1)`, [A])
+  await rejects(() => db.query(
+    `insert into health_tracking_preferences(user_id, step_goal) values ($1, 0)`, [B],
+  ), /check constraint/i)
+  await db.query(
+    `insert into activity_daily_summaries(user_id, activity_date, steps) values ($1, '2026-10-25', 5000)`,
+    [A],
+  )
+  await rejects(() => db.query(
+    `insert into activity_daily_summaries(user_id, activity_date, steps) values ($1, '2026-10-25', 7000)`,
+    [A],
+  ), /unique constraint/i)
+  const session = {
+    idempotencyKey: '20000000-0000-4000-8000-000000000001',
+    startedAt: '2026-10-25T06:00:00Z',
+    endedAt: '2026-10-25T06:30:00Z',
+  }
+  await db.query(
+    `insert into activity_sessions(user_id, idempotency_key, activity_type, started_at, ended_at, duration_seconds, route_points)
+     values ($1, $2, 'walk', $3, $4, 1800, '[{"latitude":12.9,"longitude":77.6}]')`,
+    [A, session.idempotencyKey, session.startedAt, session.endedAt],
+  )
+  await rejects(() => db.query(
+    `insert into activity_sessions(user_id, idempotency_key, activity_type, started_at, ended_at, duration_seconds)
+     values ($1, $2, 'walk', $3, $4, 1800)`,
+    [A, session.idempotencyKey, session.startedAt, session.endedAt],
+  ), /unique constraint/i)
+  await db.query(
+    `insert into sleep_logs(user_id, sleep_date, started_at, ended_at, duration_minutes, source, source_record_id)
+     values ($1, '2026-10-25', '2026-10-25T00:00:00Z', '2026-10-25T08:00:00Z', 480, 'healthkit', 'sample-1')`,
+    [A],
+  )
+  await rejects(() => db.query(
+    `insert into sleep_logs(user_id, sleep_date, started_at, ended_at, duration_minutes, time_in_bed_minutes)
+     values ($1, '2026-10-25', '2026-10-25T10:00:00Z', '2026-10-25T11:00:00Z', 60, 30)`,
+    [A],
+  ), /check constraint/i)
+  await rejects(() => db.query(
+    `insert into sleep_logs(user_id, sleep_date, started_at, ended_at, duration_minutes, source, source_record_id)
+     values ($1, '2026-10-25', '2026-10-25T10:00:00Z', '2026-10-25T11:00:00Z', 60, 'healthkit', 'sample-1')`,
+    [A],
+  ), /unique constraint/i)
+  await rejects(() => db.query(
+    `insert into sleep_logs(user_id, sleep_date, started_at, ended_at, duration_minutes)
+     values ($1, '2026-10-25', '2026-10-25T07:30:00Z', '2026-10-25T09:00:00Z', 90)`,
+    [A],
+  ), /overlaps an existing record/i)
+})
+
+test('health tracking RLS rejects cross-user reads and writes', async () => {
+  await db.query(`insert into health_tracking_preferences(user_id) values ($1)`, [A])
+  await db.query(
+    `insert into activity_daily_summaries(user_id, activity_date, steps) values ($1, '2026-10-25', 4321)`,
+    [A],
+  )
+  await db.exec('set role authenticated')
+  await db.query(`select set_config('request.jwt.claim.role', 'authenticated', false)`)
+  await db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [B])
+  const hidden = await db.query(`select steps from activity_daily_summaries where user_id = $1`, [A])
+  assert.equal(hidden.rows.length, 0, 'another user cannot read the activity summary')
+  await rejects(() => db.query(
+    `insert into activity_daily_summaries(user_id, activity_date, steps) values ($1, '2026-10-26', 10)`,
+    [A],
+  ), /row-level security/i)
+  const deleted = await db.query(
+    `delete from activity_daily_summaries where user_id = $1 returning activity_date`,
+    [A],
+  )
+  assert.equal(deleted.rows.length, 0, 'another user cannot delete an activity summary')
+  await db.exec('reset role')
+  await db.query(`select set_config('request.jwt.claim.role', '', false)`)
+  await db.query(`select set_config('request.jwt.claim.sub', '', false)`)
 })
 
 let failed = 0

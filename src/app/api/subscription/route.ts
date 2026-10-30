@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/server/supabase'
 import { getBillingState } from '@/lib/billing/server'
+import { isRevenueCatWebCheckoutEnabled } from '@/lib/billing/revenuecat-config'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,9 +31,11 @@ export async function GET(request: NextRequest) {
       aiLimit: state.aiLimit,
       remainingAIRequests,
       currentPeriodStart: state.subscription?.current_period_start || null,
-      currentPeriodEnd: state.subscription?.current_period_end || state.usage.period_end,
+      currentPeriodEnd: state.subscription?.current_period_end || null,
       cancelAtPeriodEnd: state.subscription?.cancel_at_period_end || false,
       billingProvider: state.subscription?.provider || null,
+      billingPeriod: state.subscription?.billing_period || null,
+      billingPurchasesEnabled: isRevenueCatWebCheckoutEnabled(),
       managementUrl: null,
       managementUrlAvailable: false,
     })

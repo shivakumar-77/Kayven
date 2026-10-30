@@ -2,11 +2,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { dateInTimeZone, isValidTimeZone, stepProgress } from '@/lib/health-tracking'
 import BottomNav from '@/components/BottomNav'
 import NextBestActionCard from '@/components/NextBestActionCard'
 import { SkeletonDashboard, PageLoader } from '@/components/Skeleton'
 import { useToast } from '@/components/Toast'
-import { FireIcon, DropletIcon, TargetIcon, BoltIcon, ChartBarIcon, MealPlanIcon, AIIcon, ScaleIcon, CheckIcon, MuscleIcon, WarningIcon, TrophyIcon, SunriseIcon, SunIcon, MoonIcon, AppleIcon, FoodIcon, PartyIcon, SupplementIcon, RobotIcon, WaveIcon } from '@/lib/icons'
+import { FireIcon, DropletIcon, TargetIcon, BoltIcon, ChartBarIcon, MealPlanIcon, AIIcon, ScaleIcon, CheckIcon, MuscleIcon, WarningIcon, TrophyIcon, SunriseIcon, SunIcon, MoonIcon, AppleIcon, FoodIcon, PartyIcon, SupplementIcon, RobotIcon, WaveIcon, WalkIcon } from '@/lib/icons'
 import { useSubscription } from '@/lib/billing/client'
 import { createSuggestionsRequester } from '@/lib/suggestions/request'
 
@@ -134,6 +135,20 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [logs, setLogs] = useState([])
   const [waterMl, setWaterMl] = useState(0)
+  const [healthTracking, setHealthTracking] = useState({
+    activityAvailable: true,
+    sleepAvailable: true,
+    steps: null,
+    stepGoal: 8000,
+    stepSource: null,
+    sleep: null,
+    sleepGoal: 480,
+    distanceMeters: 0,
+    activeSeconds: 0,
+    estimatedCalories: null,
+    timeZone: 'UTC',
+    warning: null,
+  })
   const [loading, setLoading] = useState(true)
   const [suggestions, setSuggestions] = useState(null)
   const [sugLoading, setSugLoading] = useState(false)
@@ -145,10 +160,11 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/auth'); return }
-    const [{ data: prof, error: profileError }, { data: foodLogs }, { data: waterLogs }] = await Promise.all([
+    const [{ data: prof, error: profileError }, { data: foodLogs }, { data: waterLogs }, { data: healthPreferences, error: preferenceError }] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', user.id).single(),
       supabase.from('food_logs').select('*').eq('user_id', user.id).eq('logged_at', today()).order('created_at'),
-      supabase.from('water_logs').select('amount_ml').eq('user_id', user.id).eq('logged_at', today())
+      supabase.from('water_logs').select('amount_ml').eq('user_id', user.id).eq('logged_at', today()),
+      supabase.from('health_tracking_preferences').select('step_goal, sleep_goal_minutes, time_zone').eq('user_id', user.id).maybeSingle(),
     ])
     if (profileError) {
       console.error('[Dashboard] Profile load failed', { code: profileError.code || 'unknown' })
@@ -162,6 +178,65 @@ export default function Dashboard() {
     if (prof) setProfile(prof)
     if (foodLogs) setLogs(foodLogs)
     if (waterLogs) setWaterMl(waterLogs.reduce((s, l) => s + l.amount_ml, 0))
+    const guessedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+    const savedTimeZone = healthPreferences?.time_zone || guessedTimeZone
+    const timeZone = isValidTimeZone(savedTimeZone) ? savedTimeZone : guessedTimeZone
+    const timeZoneWarning = timeZone === savedTimeZone ? null : 'Saved time zone was invalid; using this device time zone for today’s summaries.'
+    if (timeZoneWarning) console.error('[Dashboard] Invalid saved time zone; using device time zone')
+    const localToday = dateInTimeZone(new Date(), timeZone)
+    const activityStart = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString()
+    const [{ data: stepsRow, error: stepsError }, { data: sleepRows, error: sleepError }, { data: activityRows, error: activityError }] = await Promise.all([
+      supabase.from('activity_daily_summaries').select('steps, source').eq('user_id', user.id).eq('activity_date', localToday).maybeSingle(),
+      supabase.from('sleep_logs').select('sleep_date, duration_minutes, started_at, ended_at').eq('user_id', user.id).lte('sleep_date', localToday).order('sleep_date', { ascending: false }).limit(1),
+      supabase.from('activity_sessions').select('started_at, duration_seconds, distance_meters, estimated_calories').eq('user_id', user.id).gte('started_at', activityStart).order('started_at', { ascending: false }).limit(30),
+    ])
+    const activityAvailable = !preferenceError && !stepsError && !activityError
+    const sleepAvailable = !sleepError
+    if (!activityAvailable || !sleepAvailable) {
+      const trackingErrors = {
+        preference: preferenceError,
+        steps: stepsError,
+        sleep: sleepError,
+        activity: activityError,
+      }
+      const missingSchemaErrors = Object.entries(trackingErrors).filter(([, error]) =>
+        error && (
+          ['42P01', '42703', 'PGRST204', 'PGRST205'].includes(error.code) ||
+          /schema cache|does not exist/i.test(error.message)
+        )
+      )
+      const unexpectedErrors = Object.entries(trackingErrors).filter(([, error]) =>
+        error && !missingSchemaErrors.some(([name]) => trackingErrors[name] === error)
+      )
+      const summarize = entries => Object.fromEntries(entries.map(([name, error]) => [
+        name,
+        { code: error.code || 'unknown', message: error.message || 'No error message provided' },
+      ]))
+
+      if (missingSchemaErrors.length > 0) {
+        console.warn('[Dashboard] Health tracking database setup is incomplete. Apply the health tracking migration.', summarize(missingSchemaErrors))
+      }
+      if (unexpectedErrors.length > 0) {
+        console.error('[Dashboard] Health tracking summary query failed.', summarize(unexpectedErrors))
+      }
+    }
+    const todaySessions = (activityRows ?? []).filter(session => dateInTimeZone(new Date(session.started_at), timeZone) === localToday)
+    setHealthTracking({
+      activityAvailable,
+      sleepAvailable,
+      steps: stepsRow?.steps ?? null,
+      stepGoal: healthPreferences?.step_goal ?? 8000,
+      stepSource: stepsRow?.source ?? null,
+      sleep: sleepRows?.[0] ?? null,
+      sleepGoal: healthPreferences?.sleep_goal_minutes ?? 480,
+      distanceMeters: todaySessions.reduce((sum, session) => sum + Number(session.distance_meters || 0), 0),
+      activeSeconds: todaySessions.reduce((sum, session) => sum + Number(session.duration_seconds || 0), 0),
+      estimatedCalories: todaySessions.length > 0 && todaySessions.every(session => session.estimated_calories !== null)
+        ? todaySessions.reduce((sum, session) => sum + Number(session.estimated_calories || 0), 0)
+        : null,
+      timeZone,
+      warning: timeZoneWarning,
+    })
     setLoading(false)
   }, [router])
 
@@ -191,6 +266,11 @@ export default function Dashboard() {
   const g = profile ?? { cal_target:1700, protein_target:167, carb_target:144, fat_target:60, fiber_target:25, water_goal:2000 }
   const waterGoal = g.water_goal || 2000
   const waterPct = Math.min(1, waterMl / waterGoal)
+  const stepSummary = healthTracking.steps === null ? null : stepProgress(healthTracking.steps, healthTracking.stepGoal)
+  const sleepDifference = healthTracking.sleep ? Math.abs(healthTracking.sleep.duration_minutes - healthTracking.sleepGoal) : 0
+  const sleepDifferenceText = sleepDifference >= 60
+    ? `${Math.floor(sleepDifference / 60)}h${sleepDifference % 60 ? ` ${sleepDifference % 60}m` : ''}`
+    : `${sleepDifference}m`
 
   async function deleteLog(id) {
     await supabase.from('food_logs').delete().eq('id', id)
@@ -384,6 +464,45 @@ export default function Dashboard() {
           {waterMl>=waterGoal ? <><PartyIcon size={13}/> Done</> : `${waterGoal-waterMl}ml left`}
         </div>
       </div>
+
+      <section aria-label="Movement and recovery summaries" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginTop: 14 }}>
+        <button type="button" onClick={() => router.push('/activity')} className="card press-effect" style={{ minWidth: 0, padding: 13, textAlign: 'left', cursor: 'pointer', color: 'var(--text)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 5 }}>
+            <span style={{ width: 30, height: 30, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'var(--primary-bg)', color: 'var(--primary)' }}><WalkIcon size={16} /></span>
+            <span style={{ color: 'var(--muted)', fontSize: 9, fontWeight: 700 }}>ACTIVITY</span>
+          </div>
+          <strong style={{ display: 'block', marginTop: 12, fontSize: 19, lineHeight: 1.1, letterSpacing: '-.03em', fontVariantNumeric: 'tabular-nums' }}>
+            {!healthTracking.activityAvailable ? 'Setup needed' : healthTracking.steps === null ? 'No steps yet' : healthTracking.steps.toLocaleString()}
+          </strong>
+          <span style={{ display: 'block', color: 'var(--muted)', fontSize: 10, marginTop: 4, lineHeight: 1.35 }}>
+            {!healthTracking.activityAvailable ? 'Apply the health tracking migration' : healthTracking.steps === null ? 'Enter today’s total' : `${healthTracking.stepSource === 'manual' ? 'Manual' : healthTracking.stepSource} · ${healthTracking.stepGoal.toLocaleString()} goal`}
+          </span>
+          {stepSummary && <div role="progressbar" aria-label="Daily steps goal" aria-valuenow={Math.min(healthTracking.steps, healthTracking.stepGoal)} aria-valuemin={0} aria-valuemax={healthTracking.stepGoal} style={{ height: 5, overflow: 'hidden', marginTop: 10, borderRadius: 6, background: 'var(--card2)' }}><div style={{ width: `${stepSummary.percent}%`, height: '100%', background: 'var(--primary)' }} /></div>}
+          {(healthTracking.distanceMeters > 0 || healthTracking.activeSeconds > 0 || healthTracking.estimatedCalories !== null) && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 9, lineHeight: 1.35, marginTop: 7 }}>
+            {healthTracking.distanceMeters > 0 ? `${(healthTracking.distanceMeters / 1000).toFixed(1)} km` : ''}
+            {healthTracking.activeSeconds > 0 ? `${healthTracking.distanceMeters > 0 ? ' · ' : ''}${Math.round(healthTracking.activeSeconds / 60)} min active` : ''}
+            {healthTracking.estimatedCalories !== null ? ` · ~${Math.round(healthTracking.estimatedCalories)} kcal est.` : ''}
+          </span>}
+          <span style={{ display: 'block', color: 'var(--primary)', fontSize: 10, fontWeight: 700, marginTop: 9 }}>Open activity →</span>
+        </button>
+        <button type="button" onClick={() => router.push('/sleep')} className="card press-effect" style={{ minWidth: 0, padding: 13, textAlign: 'left', cursor: 'pointer', color: 'var(--text)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 5 }}>
+            <span style={{ width: 30, height: 30, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'var(--purple-bg)', color: 'var(--purple)' }}><MoonIcon size={16} /></span>
+            <span style={{ color: 'var(--muted)', fontSize: 9, fontWeight: 700 }}>RECOVERY</span>
+          </div>
+          <strong style={{ display: 'block', marginTop: 12, fontSize: 19, lineHeight: 1.1, letterSpacing: '-.03em' }}>
+            {!healthTracking.sleepAvailable ? 'Setup needed' : healthTracking.sleep ? `${Math.floor(healthTracking.sleep.duration_minutes / 60)}h${healthTracking.sleep.duration_minutes % 60 ? ` ${healthTracking.sleep.duration_minutes % 60}m` : ''}` : 'No sleep yet'}
+          </strong>
+          <span style={{ display: 'block', color: 'var(--muted)', fontSize: 10, marginTop: 4, lineHeight: 1.35 }}>
+            {!healthTracking.sleepAvailable ? 'Apply the health tracking migration' : healthTracking.sleep ? (sleepDifference === 0 ? `At ${Math.floor(healthTracking.sleepGoal / 60)}h goal` : `${sleepDifferenceText} ${healthTracking.sleep.duration_minutes > healthTracking.sleepGoal ? 'above' : 'below'} · ${Math.floor(healthTracking.sleepGoal / 60)}h goal`) : 'Log sleep manually'}
+          </span>
+          {healthTracking.sleep && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 9, lineHeight: 1.35, marginTop: 4 }}>{new Date(healthTracking.sleep.started_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}–{new Date(healthTracking.sleep.ended_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>}
+          {healthTracking.sleep && <div role="progressbar" aria-label="Sleep duration goal" aria-valuenow={Math.min(healthTracking.sleep.duration_minutes, healthTracking.sleepGoal)} aria-valuemin={0} aria-valuemax={healthTracking.sleepGoal} style={{ height: 5, overflow: 'hidden', marginTop: 10, borderRadius: 6, background: 'var(--card2)' }}><div style={{ width: `${Math.min(100, Math.round(healthTracking.sleep.duration_minutes / healthTracking.sleepGoal * 100))}%`, height: '100%', background: 'var(--purple)' }} /></div>}
+          <span style={{ display: 'block', color: 'var(--primary)', fontSize: 10, fontWeight: 700, marginTop: 9 }}>Open sleep →</span>
+        </button>
+      </section>
+      {(!healthTracking.activityAvailable || !healthTracking.sleepAvailable) && <p role="status" style={{ color: 'var(--muted)', fontSize: 10, lineHeight: 1.4, margin: '7px 3px 0' }}>Health tracking setup is incomplete. Apply the latest Supabase migration to enable any missing tracking features. Nutrition tracking is unaffected.</p>}
+      {healthTracking.warning && <p role="status" style={{ color: 'var(--orange)', fontSize: 10, lineHeight: 1.4, margin: '7px 3px 0' }}>{healthTracking.warning}</p>}
 
       <NextBestActionCard profile={profile} logs={logs} waterMl={waterMl} />
 

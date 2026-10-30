@@ -37,9 +37,9 @@ export async function syncRevenueCatWebhookEvent(
   supabase: any,
   provider: RevenueCatProvider,
   verifiedEvent: VerifiedRevenueCatEvent,
-): Promise<{ ok: boolean; duplicate: boolean }> {
+): Promise<{ ok: boolean; duplicate: boolean; stale: boolean }> {
   const config = getRevenueCatConfig()
-  if (!config) return { ok: false, duplicate: false }
+  if (!config) return { ok: false, duplicate: false, stale: false }
 
   const { data: existing, error: lookupError } = await supabase
     .from('billing_webhook_events')
@@ -48,15 +48,21 @@ export async function syncRevenueCatWebhookEvent(
     .eq('provider_event_id', verifiedEvent.id)
     .maybeSingle()
 
-  if (lookupError) return { ok: false, duplicate: false }
-  if (existing?.status === 'processed') return { ok: true, duplicate: true }
+  if (lookupError) return { ok: false, duplicate: false, stale: false }
+  if (existing?.status === 'processed') return { ok: true, duplicate: true, stale: false }
+  if (existing?.status === 'processing') return { ok: false, duplicate: true, stale: false }
 
-  const eventWrite = existing
-    ? await supabase
+  if (existing) {
+    const claim = await supabase
       .from('billing_webhook_events')
-      .update({ status: 'processing' })
+      .update({ status: 'processing', processed_at: null })
       .eq('id', existing.id)
-    : await supabase
+      .eq('status', 'failed')
+      .select('id')
+      .maybeSingle()
+    if (claim.error || !claim.data) return { ok: false, duplicate: true, stale: false }
+  } else {
+    const claim = await supabase
       .from('billing_webhook_events')
       .insert({
         provider: 'revenuecat',
@@ -65,8 +71,11 @@ export async function syncRevenueCatWebhookEvent(
         provider_user_id: verifiedEvent.appUserId,
         status: 'processing',
       })
-
-  if (eventWrite.error) return { ok: false, duplicate: Boolean(existing) }
+      .select('id')
+      .maybeSingle()
+    if (claim.error) return { ok: false, duplicate: claim.error.code === '23505', stale: false }
+    if (!claim.data) return { ok: false, duplicate: false, stale: false }
+  }
 
   if (!SUBSCRIPTION_EVENT_TYPES.has(verifiedEvent.type.toUpperCase())) {
     const processed = await supabase
@@ -74,9 +83,22 @@ export async function syncRevenueCatWebhookEvent(
       .update({ status: 'processed', processed_at: new Date().toISOString() })
       .eq('provider', 'revenuecat')
       .eq('provider_event_id', verifiedEvent.id)
-    return { ok: !processed.error, duplicate: Boolean(existing) }
+    return { ok: !processed.error, duplicate: Boolean(existing), stale: false }
   }
 
+  const eventTimestampMs = verifiedEvent.payload.event_timestamp_ms
+  if (!Number.isSafeInteger(eventTimestampMs) || !eventTimestampMs || eventTimestampMs <= 0) {
+    await supabase
+      .from('billing_webhook_events')
+      .update({ status: 'failed', processed_at: null })
+      .eq('provider', 'revenuecat')
+      .eq('provider_event_id', verifiedEvent.id)
+    return { ok: false, duplicate: Boolean(existing), stale: false }
+  }
+
+  const productId = verifiedEvent.payload.product_id || ''
+  const status = normalizeRevenueCatStatus(verifiedEvent.payload)
+  const productPlan = provider.mapProviderProductToPlan(productId)
   const subscriberState = provider.normalizeSubscriber(verifiedEvent.appUserId, {
     entitlements: verifiedEvent.payload.entitlement_ids?.reduce<Record<string, { product_identifier?: string | null; expires_date?: string | null }>>((result, entitlement) => {
       result[entitlement] = {
@@ -94,55 +116,42 @@ export async function syncRevenueCatWebhookEvent(
     } : {},
   })
 
-  const status = normalizeRevenueCatStatus(verifiedEvent.payload)
-  const productPlan = provider.mapProviderProductToPlan(verifiedEvent.payload.product_id || '')
-  const planId = subscriberState.planId === 'free' && status !== 'expired'
-    ? productPlan || 'free'
-    : subscriberState.planId
-  const state = subscriberState.state || (planId !== 'free' ? {
-    provider: 'revenuecat' as const,
-    providerCustomerId: verifiedEvent.appUserId,
-    productId: verifiedEvent.payload.product_id || null,
-    status,
-    currentPeriodEnd: verifiedEvent.payload.expiration_at_ms ? new Date(verifiedEvent.payload.expiration_at_ms).toISOString() : null,
-  } : null)
-  const periodStillActive = Boolean(state?.currentPeriodEnd && new Date(state.currentPeriodEnd).getTime() > Date.now())
-  const persistedStatus = status === 'canceled' && periodStillActive ? 'active' : status
-  const subscription = state ? {
-    user_id: verifiedEvent.appUserId,
-    provider: 'revenuecat',
-    provider_customer_id: state.providerCustomerId || verifiedEvent.appUserId,
-    provider_subscription_id: verifiedEvent.payload.original_transaction_id || verifiedEvent.payload.transaction_id || verifiedEvent.id,
-    plan_id: planId,
-    status: persistedStatus,
-    current_period_start: state.currentPeriodStart || null,
-    current_period_end: state.currentPeriodEnd || null,
-    cancel_at_period_end: state.cancelAtPeriodEnd || status === 'canceled',
-  } : null
-
+  const knownProduct = Boolean(productPlan || subscriberState.state)
+  const providerSubscriptionId = verifiedEvent.payload.original_transaction_id
+    || verifiedEvent.payload.transaction_id
   let syncError: unknown = null
-  if (subscription) {
-    const { data: existingSubscription, error: subscriptionLookupError } = await supabase
-      .from('subscriptions')
-      .select('id')
-      .eq('provider', 'revenuecat')
-      .eq('provider_subscription_id', subscription.provider_subscription_id)
-      .maybeSingle()
-    if (subscriptionLookupError) {
-      syncError = subscriptionLookupError
+  let stale = false
+
+  if (knownProduct) {
+    if (!providerSubscriptionId) {
+      syncError = new Error('RevenueCat subscription event has no transaction identifier')
     } else {
-      const write = existingSubscription
-        ? await supabase.from('subscriptions').update(subscription).eq('id', existingSubscription.id)
-        : await supabase.from('subscriptions').insert(subscription)
+      const state = subscriberState.state
+      const planId = status === 'expired'
+        ? 'free'
+        : subscriberState.planId === 'free'
+          ? productPlan || 'free'
+          : subscriberState.planId
+      const persistedStatus = status === 'canceled' && state?.currentPeriodEnd
+        && new Date(state.currentPeriodEnd).getTime() > Date.now()
+        ? 'active'
+        : status
+      const write = await supabase.rpc('apply_revenuecat_subscription_event', {
+        p_user_id: verifiedEvent.appUserId,
+        p_provider_subscription_id: providerSubscriptionId,
+        p_plan_id: planId,
+        p_billing_period: state?.billingPeriod || config.productIds[productId]?.billingPeriod || null,
+        p_status: persistedStatus,
+        p_current_period_start: state?.currentPeriodStart
+          || (verifiedEvent.payload.purchased_at_ms ? new Date(verifiedEvent.payload.purchased_at_ms).toISOString() : null),
+        p_current_period_end: state?.currentPeriodEnd
+          || (verifiedEvent.payload.expiration_at_ms ? new Date(verifiedEvent.payload.expiration_at_ms).toISOString() : null),
+        p_cancel_at_period_end: Boolean(state?.cancelAtPeriodEnd || status === 'canceled'),
+        p_event_timestamp_ms: eventTimestampMs,
+      })
       syncError = write.error
+      stale = !write.error && write.data === false
     }
-  } else {
-    const write = await supabase
-      .from('subscriptions')
-      .update({ status, plan_id: 'free', updated_at: new Date().toISOString() })
-      .eq('user_id', verifiedEvent.appUserId)
-      .eq('provider', 'revenuecat')
-    syncError = write.error
   }
 
   const eventStatus = await supabase
@@ -151,5 +160,5 @@ export async function syncRevenueCatWebhookEvent(
     .eq('provider', 'revenuecat')
     .eq('provider_event_id', verifiedEvent.id)
 
-  return { ok: !syncError && !eventStatus.error, duplicate: Boolean(existing) }
+  return { ok: !syncError && !eventStatus.error, duplicate: Boolean(existing), stale }
 }

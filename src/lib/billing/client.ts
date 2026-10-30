@@ -33,6 +33,8 @@ function unavailableSubscriptionState(): ClientSubscriptionState {
     currentPeriodEnd: null,
     cancelAtPeriodEnd: false,
     billingProvider: null,
+    billingPeriod: null,
+    billingPurchasesEnabled: false,
     managementUrl: null,
     managementUrlAvailable: false,
     statusUnavailable: true,
@@ -99,7 +101,7 @@ export function clearSubscriptionState(): void {
 
 export async function waitForSubscriptionPlan(
   expectedPlan: PlanId,
-  options: { timeoutMs?: number; intervalMs?: number } = {},
+  options: { timeoutMs?: number; intervalMs?: number; expectedBillingPeriod?: 'monthly' | 'yearly' } = {},
 ): Promise<ClientSubscriptionState | null> {
   const timeoutMs = options.timeoutMs ?? 8000
   const intervalMs = options.intervalMs ?? 1000
@@ -108,14 +110,15 @@ export async function waitForSubscriptionPlan(
   while (Date.now() - startedAt <= timeoutMs) {
     try {
       const current = await fetchSubscriptionState()
-      if (current.currentPlan === expectedPlan) return current
+      if (current.currentPlan === expectedPlan
+        && (!options.expectedBillingPeriod || current.billingPeriod === options.expectedBillingPeriod)) return current
     } catch {
       // Keep polling boundedly; the server remains authoritative.
     }
     await new Promise(resolve => setTimeout(resolve, intervalMs))
   }
 
-  return cachedState
+  return null
 }
 
 export interface ClientSubscriptionState {
@@ -129,6 +132,8 @@ export interface ClientSubscriptionState {
   currentPeriodEnd: string | null
   cancelAtPeriodEnd: boolean
   billingProvider: string | null
+  billingPeriod: 'monthly' | 'yearly' | null
+  billingPurchasesEnabled: boolean
   managementUrl: string | null
   managementUrlAvailable: boolean
   statusUnavailable?: boolean
@@ -169,7 +174,8 @@ export function useSubscription() {
 export function useEntitlement(feature: EntitlementId) {
   const subscription = useSubscription()
   const value = subscription.state?.entitlements[feature]
-  const enabled = typeof value === 'boolean' ? value : value?.enabled === true
+  const enabled = !subscription.state?.statusUnavailable
+    && (typeof value === 'boolean' ? value : value?.enabled === true)
   return { ...subscription, enabled }
 }
 

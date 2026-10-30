@@ -31,6 +31,7 @@ async function run() {
     path.join(sourceRoot, 'lib/billing/billing.test.ts'),
     path.join(sourceRoot, 'lib/billing/revenuecat.test.ts'),
     path.join(sourceRoot, 'lib/challenge-progress.test.ts'),
+    path.join(sourceRoot, 'lib/health-tracking.test.ts'),
     path.join(sourceRoot, 'lib/onboarding.test.ts'),
     path.join(sourceRoot, 'app/api/meal-search/route.test.ts'),
     path.join(sourceRoot, 'app/api/ai-routes.test.ts'),
@@ -68,15 +69,17 @@ async function run() {
   const { runBillingTests } = require(path.join(outputRoot, 'lib/billing/billing.test.js'))
   const { runRevenueCatTests } = require(path.join(outputRoot, 'lib/billing/revenuecat.test.js'))
   const { runWeeklyChallengeTests } = require(path.join(outputRoot, 'lib/challenge-progress.test.js'))
+  const { runHealthTrackingTests } = require(path.join(outputRoot, 'lib/health-tracking.test.js'))
   const { runOnboardingTests } = require(path.join(outputRoot, 'lib/onboarding.test.js'))
   const { runMealSearchTests } = require(path.join(outputRoot, 'app/api/meal-search/route.test.js'))
   const { runAIRouteTests } = require(path.join(outputRoot, 'app/api/ai-routes.test.js'))
   await runBillingTests()
   runWeeklyChallengeTests()
+  runHealthTrackingTests()
   runOnboardingTests()
   await runMealSearchTests()
   await runAIRouteTests(outputRoot)
-  runRevenueCatTests()
+  await runRevenueCatTests()
   process.stdout.write('Billing, RevenueCat and AI route checks passed.\n')
 }
 

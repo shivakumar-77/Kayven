@@ -37,6 +37,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Webhook processing failed.' }, { status: 500 })
   }
 
-  console.info('[KAYVEN Billing] RevenueCat webhook processed', { duplicate: result.duplicate, eventType: event.type })
+  console.info('[KAYVEN Billing] RevenueCat webhook processed', {
+    duplicate: result.duplicate,
+    stale: result.stale,
+    eventType: event.type,
+  })
   return NextResponse.json({ ok: true, duplicate: result.duplicate })
 }

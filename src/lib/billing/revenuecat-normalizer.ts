@@ -23,6 +23,7 @@ export interface RevenueCatEventPayload {
   id?: string
   type?: string
   app_user_id?: string
+  event_timestamp_ms?: number
   aliases?: string[]
   product_id?: string | null
   original_transaction_id?: string | null
@@ -34,7 +35,7 @@ export interface RevenueCatEventPayload {
   environment?: string | null
 }
 
-const PLAN_PRIORITY: PlanId[] = ['pro', 'premium']
+const PLAN_PRIORITY: PlanId[] = ['pro', 'standard', 'basic', 'premium']
 
 function activeEntitlement(entry: RevenueCatEntitlementPayload, now = Date.now()): boolean {
   return !entry.expires_date || new Date(entry.expires_date).getTime() > now
@@ -48,14 +49,17 @@ export function mapRevenueCatEntitlementsToPlan(
     .filter(([, value]) => activeEntitlement(value))
     .map(([identifier]) => identifier)
 
-  if (active.includes(config.entitlementIds.pro)) return 'pro'
-  if (active.includes(config.entitlementIds.premium)) return 'premium'
+  const entitlementPlan = PLAN_PRIORITY.find(plan => {
+    const entitlementId = config.entitlementIds[plan === 'premium' ? 'premium' : plan]
+    return entitlementId ? active.includes(entitlementId) : false
+  })
+  if (entitlementPlan) return entitlementPlan
   return 'free'
 }
 
 export function mapRevenueCatProductToPlan(productId: string | null | undefined, config: RevenueCatConfig): PlanId {
   if (!productId) return 'free'
-  return config.productIds[productId] || 'free'
+  return config.productIds[productId]?.planId || 'free'
 }
 
 export function normalizeRevenueCatStatus(event: RevenueCatEventPayload): SubscriptionStatus {
@@ -79,21 +83,27 @@ export function normalizeRevenueCatSubscriber(
   const activeEntitlement = Object.entries(subscriber.entitlements || {})
     .filter(([, value]) => activeEntitlementValue(value))
     .sort(([left], [right]) => {
-      const leftRank = PLAN_PRIORITY.indexOf(left === config.entitlementIds.pro ? 'pro' : 'premium')
-      const rightRank = PLAN_PRIORITY.indexOf(right === config.entitlementIds.pro ? 'pro' : 'premium')
+      const entitlementPlan = (identifier: string) => PLAN_PRIORITY.find(plan => {
+        const entitlementId = config.entitlementIds[plan]
+        return entitlementId === identifier
+      }) || 'premium'
+      const leftRank = PLAN_PRIORITY.indexOf(entitlementPlan(left))
+      const rightRank = PLAN_PRIORITY.indexOf(entitlementPlan(right))
       return leftRank - rightRank
     })[0]?.[1]
 
   const productId = activeEntitlement?.product_identifier || null
   const subscription = productId ? subscriber.subscriptions?.[productId] : undefined
   const currentPeriodEnd = activeEntitlement?.expires_date || subscription?.expires_date || null
+  const productMapping = productId ? config.productIds[productId] : null
 
   return {
-    planId,
+    planId: productMapping?.planId || planId,
     state: {
       provider: 'revenuecat',
       providerCustomerId: customerId,
       productId,
+      billingPeriod: productMapping?.billingPeriod || null,
       status: 'active',
       currentPeriodEnd,
       currentPeriodStart: activeEntitlement?.purchase_date || null,

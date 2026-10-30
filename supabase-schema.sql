@@ -130,12 +130,22 @@ create table if not exists public.sleep_logs (
   started_at timestamptz not null,
   ended_at timestamptz not null,
   duration_minutes integer not null check (duration_minutes between 1 and 1440),
+  time_in_bed_minutes integer check (time_in_bed_minutes is null or time_in_bed_minutes between 1 and 1440),
+  source text not null default 'manual' check (source in ('manual', 'healthkit', 'health_connect', 'imported')),
+  source_record_id text,
+  notes text check (notes is null or length(notes) <= 1000),
   created_at timestamptz not null default now(),
+  check (time_in_bed_minutes is null or time_in_bed_minutes >= duration_minutes),
   check (ended_at > started_at)
 );
 
 create index if not exists idx_sleep_logs_user_sleep_date
   on public.sleep_logs(user_id, sleep_date desc);
+create index if not exists idx_sleep_logs_user_interval
+  on public.sleep_logs(user_id, started_at, ended_at);
+create unique index if not exists idx_sleep_logs_user_source_record
+  on public.sleep_logs(user_id, source, source_record_id)
+  where source_record_id is not null;
 
 alter table public.sleep_logs enable row level security;
 
@@ -146,13 +156,114 @@ create policy "own sleep logs"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+create or replace function public.prevent_overlapping_sleep_logs()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  perform pg_advisory_xact_lock(hashtextextended(new.user_id::text, 0));
+  if exists (
+    select 1
+    from public.sleep_logs existing
+    where existing.user_id = new.user_id
+      and existing.id is distinct from new.id
+      and existing.started_at < new.ended_at
+      and existing.ended_at > new.started_at
+  ) then
+    raise exception 'Sleep interval overlaps an existing record'
+      using errcode = '23P01';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_overlapping_sleep_logs on public.sleep_logs;
+create trigger prevent_overlapping_sleep_logs
+  before insert or update of user_id, started_at, ended_at on public.sleep_logs
+  for each row execute function public.prevent_overlapping_sleep_logs();
+
+create table if not exists public.health_tracking_preferences (
+  user_id uuid primary key references public.profiles(id) on delete cascade,
+  step_goal integer not null default 8000 check (step_goal between 1000 and 100000),
+  sleep_goal_minutes integer not null default 480 check (sleep_goal_minutes between 180 and 900),
+  time_zone text not null default 'UTC' check (length(time_zone) between 1 and 100),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.activity_daily_summaries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  activity_date date not null,
+  steps integer not null default 0 check (steps between 0 and 1000000),
+  source text not null default 'manual' check (source in ('manual', 'device', 'imported')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, activity_date)
+);
+
+create table if not exists public.activity_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  idempotency_key uuid not null,
+  activity_type text not null check (activity_type in ('walk', 'run')),
+  started_at timestamptz not null,
+  ended_at timestamptz not null,
+  duration_seconds integer not null check (duration_seconds between 1 and 86400),
+  distance_meters numeric(12, 2) not null default 0 check (distance_meters >= 0),
+  average_pace_seconds_per_km numeric(10, 2),
+  average_speed_mps numeric(8, 3),
+  estimated_calories numeric(10, 2),
+  route_points jsonb not null default '[]'::jsonb,
+  source text not null default 'browser_gps' check (source in ('browser_gps', 'manual', 'healthkit', 'health_connect')),
+  created_at timestamptz not null default now(),
+  check (ended_at > started_at),
+  check (jsonb_typeof(route_points) = 'array' and jsonb_array_length(route_points) <= 3000),
+  check (estimated_calories is null or estimated_calories >= 0),
+  unique (user_id, idempotency_key)
+);
+
+create index if not exists idx_activity_daily_summaries_user_date
+  on public.activity_daily_summaries(user_id, activity_date desc);
+create index if not exists idx_activity_sessions_user_started_at
+  on public.activity_sessions(user_id, started_at desc);
+
+alter table public.health_tracking_preferences enable row level security;
+alter table public.activity_daily_summaries enable row level security;
+alter table public.activity_sessions enable row level security;
+
+drop policy if exists "Users manage their own health tracking preferences" on public.health_tracking_preferences;
+create policy "Users manage their own health tracking preferences"
+  on public.health_tracking_preferences
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "Users manage their own activity summaries" on public.activity_daily_summaries;
+create policy "Users manage their own activity summaries"
+  on public.activity_daily_summaries
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "Users manage their own activity sessions" on public.activity_sessions;
+create policy "Users manage their own activity sessions"
+  on public.activity_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+revoke all on public.health_tracking_preferences, public.activity_daily_summaries,
+  public.activity_sessions, public.sleep_logs from anon;
+grant select, insert, update, delete on public.health_tracking_preferences,
+  public.activity_daily_summaries, public.activity_sessions, public.sleep_logs to authenticated;
+grant all on public.health_tracking_preferences, public.activity_daily_summaries,
+  public.activity_sessions, public.sleep_logs to service_role;
+
 create table if not exists subscriptions (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references profiles(id) on delete cascade not null,
   provider text not null,
   provider_customer_id text,
   provider_subscription_id text,
+  provider_event_timestamp timestamptz,
   plan_id text not null default 'free' check (plan_id in ('free', 'basic', 'standard', 'premium', 'pro')),
+  billing_period text check (billing_period is null or billing_period in ('monthly', 'yearly')),
   status text not null check (status in ('active', 'trialing', 'past_due', 'canceled', 'expired')),
   current_period_start timestamptz,
   current_period_end timestamptz,
@@ -236,6 +347,8 @@ alter table billing_webhook_events enable row level security;
 drop policy if exists "No client access to billing webhook events" on billing_webhook_events;
 create policy "No client access to billing webhook events"
   on billing_webhook_events for all using (false) with check (false);
+revoke all on table billing_webhook_events from public, anon, authenticated;
+grant all on table billing_webhook_events to service_role;
 
 alter table subscriptions enable row level security;
 alter table ai_usage enable row level security;
@@ -246,6 +359,94 @@ drop policy if exists "own subscriptions" on subscriptions;
 drop policy if exists "own ai usage" on ai_usage;
 create policy "own subscriptions" on subscriptions for select using (auth.uid() = user_id);
 create policy "own ai usage" on ai_usage for select using (auth.uid() = user_id);
+revoke all on table subscriptions from public, anon, authenticated;
+grant select on table subscriptions to authenticated;
+grant all on table subscriptions to service_role;
+
+create or replace function public.apply_revenuecat_subscription_event(
+  p_user_id uuid,
+  p_provider_subscription_id text,
+  p_plan_id text,
+  p_billing_period text,
+  p_status text,
+  p_current_period_start timestamptz,
+  p_current_period_end timestamptz,
+  p_cancel_at_period_end boolean,
+  p_event_timestamp_ms bigint
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_applied boolean := false;
+  v_event_timestamp timestamptz;
+begin
+  if p_user_id is null
+    or nullif(btrim(p_provider_subscription_id), '') is null
+    or p_event_timestamp_ms is null
+    or p_event_timestamp_ms <= 0 then
+    raise exception 'Invalid RevenueCat subscription event';
+  end if;
+
+  v_event_timestamp := to_timestamp(p_event_timestamp_ms::double precision / 1000.0);
+
+  insert into public.subscriptions (
+    user_id,
+    provider,
+    provider_customer_id,
+    provider_subscription_id,
+    provider_event_timestamp,
+    plan_id,
+    billing_period,
+    status,
+    current_period_start,
+    current_period_end,
+    cancel_at_period_end,
+    updated_at
+  )
+  values (
+    p_user_id,
+    'revenuecat',
+    p_user_id::text,
+    p_provider_subscription_id,
+    v_event_timestamp,
+    p_plan_id,
+    p_billing_period,
+    p_status,
+    p_current_period_start,
+    p_current_period_end,
+    coalesce(p_cancel_at_period_end, false),
+    now()
+  )
+  on conflict (provider, provider_subscription_id)
+    where provider_subscription_id is not null
+  do update set
+    user_id = excluded.user_id,
+    provider_customer_id = excluded.provider_customer_id,
+    provider_event_timestamp = excluded.provider_event_timestamp,
+    plan_id = excluded.plan_id,
+    billing_period = excluded.billing_period,
+    status = excluded.status,
+    current_period_start = excluded.current_period_start,
+    current_period_end = excluded.current_period_end,
+    cancel_at_period_end = excluded.cancel_at_period_end,
+    updated_at = now()
+  where public.subscriptions.provider_event_timestamp is null
+    or public.subscriptions.provider_event_timestamp < excluded.provider_event_timestamp
+  returning true into v_applied;
+
+  return coalesce(v_applied, false);
+end;
+$$;
+
+revoke all on function public.apply_revenuecat_subscription_event(
+  uuid, text, text, text, text, timestamptz, timestamptz, boolean, bigint
+) from public, anon, authenticated;
+grant execute on function public.apply_revenuecat_subscription_event(
+  uuid, text, text, text, text, timestamptz, timestamptz, boolean, bigint
+) to service_role;
 
 create or replace function record_ai_usage(
   p_period_start timestamptz,

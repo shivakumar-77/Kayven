@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import BottomNav from '@/components/BottomNav'
 import PageHeader from '@/components/PageHeader'
 import SubscriptionStatusCard from '@/components/SubscriptionStatusCard'
@@ -51,6 +52,7 @@ export default function SubscriptionManagePage() {
           onClick={() => router.refresh()}
           style={{
             marginTop: 12,
+            minHeight: 44,
             padding: '8px 16px',
             border: '1px solid var(--border)',
             background: 'var(--card)',
@@ -72,10 +74,10 @@ export default function SubscriptionManagePage() {
       <div style={{ padding: 20 }}>
         <PageHeader title="No subscription found" />
         <div style={{ marginTop: 20, textAlign: 'center' }}>
-          <p>You don't have an active subscription.</p>
+          <p>You’re currently using the Free plan.</p>
           <UpgradePrompt
-            title="Start your subscription"
-            message="Choose a plan to access all features"
+            title="Compare available plans"
+            message="Review the configured plan features and AI Coach allowances before deciding."
             suggestedPlan="basic"
             context="feature_locked"
           />
@@ -97,23 +99,19 @@ export default function SubscriptionManagePage() {
         />
         {refreshError && <p role="alert" style={{ color: 'var(--orange)', marginTop: 10 }}>{refreshError}</p>}
 
-        {/* Add some spacing */}
-        <div style={{ height: 24 }}></div>
+        <div style={{ marginTop: 18, padding: 16, borderRadius: 16, background: 'var(--card)', border: '1px solid var(--border)' }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 16, color: 'var(--text)' }}>Plan options</h2>
+          <p style={{ margin: '0 0 10px', color: 'var(--muted)', fontSize: 13, lineHeight: 1.5 }}>Review the current tier comparison and any configured purchase options.</p>
+          <Link href="/subscription" style={{ color: 'var(--primary)', fontWeight: 750 }}>View plans and comparison</Link>
+        </div>
 
         <AIUsageMeter compact={false} />
 
-        {/* Add some spacing */}
-        <div style={{ height: 24 }}></div>
+        <div style={{ marginTop: 18, padding: 16, borderRadius: 16, background: 'var(--card)', border: '1px solid var(--border)' }}>
+          <h2 style={{ margin: '0 0 6px', fontSize: 16, color: 'var(--text)' }}>Payment history</h2>
+          <p style={{ margin: 0, color: 'var(--muted)', fontSize: 13, lineHeight: 1.5 }}>Kayven does not currently store payment history or invoice links. Use the billing provider’s account tools where available.</p>
+        </div>
 
-        {/* Upgrade prompt for free users or those with limits */}
-        {['free', 'basic', 'premium'].includes(state.currentPlan) && (
-          <UpgradePrompt
-            title="Unlock more features"
-            message="Upgrade your plan to access premium features and higher limits"
-            suggestedPlan={state.currentPlan === 'free' ? 'basic' : 'standard'}
-            context="feature_locked"
-          />
-        )}
       </div>
 
       <BottomNav />

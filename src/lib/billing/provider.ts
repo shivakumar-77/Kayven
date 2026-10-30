@@ -1,4 +1,4 @@
-import type { PlanId } from './plans'
+import type { BillingPeriod, PlanId } from './plans'
 import type { SubscriptionStatus, UserSubscription } from './server'
 
 export type BillingProviderName = 'revenuecat' | 'apple' | 'google_play' | 'web' | 'razorpay'
@@ -8,6 +8,7 @@ export interface ProviderSubscriptionState {
   providerCustomerId?: string | null
   providerSubscriptionId?: string | null
   productId?: string | null
+  billingPeriod?: BillingPeriod | null
   status: SubscriptionStatus
   currentPeriodStart?: string | null
   currentPeriodEnd?: string | null
@@ -33,6 +34,7 @@ export function toSubscriptionRecord(
     provider_subscription_id: state.providerSubscriptionId || null,
     plan_id: planId,
     status: state.status,
+    billing_period: state.billingPeriod || null,
     current_period_start: state.currentPeriodStart || null,
     current_period_end: state.currentPeriodEnd || null,
     cancel_at_period_end: state.cancelAtPeriodEnd || false,

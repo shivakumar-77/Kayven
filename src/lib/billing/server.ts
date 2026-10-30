@@ -1,5 +1,6 @@
 import { getAIRequestLimit, getUserEntitlements, planFromSubscription, type Entitlements, type EntitlementId } from './entitlements'
 import type { PlanConfig } from './plans'
+import type { BillingPeriod } from './plans'
 import { aiAbuseGuard } from './abuse-guard'
 import { createSupabaseAdminClient } from '../server/supabase-admin'
 import { isValidAIIdempotencyKey } from '../server/ai-idempotency'
@@ -13,6 +14,7 @@ export interface UserSubscription {
   provider_customer_id?: string | null
   provider_subscription_id?: string | null
   plan_id: string
+  billing_period?: BillingPeriod | null
   status: SubscriptionStatus
   current_period_start?: string | null
   current_period_end?: string | null

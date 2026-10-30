@@ -1,6 +1,5 @@
 import { canUseFeature, getAIRequestLimit, getUserEntitlements, planFromSubscription } from './entitlements'
-import { getPlanConfig, PLANS } from './plans'
-import { RAZORPAY_PLANS, validateAllPricingConfigs } from './razorpay-config'
+import { getPlanConfig, PAID_PLAN_IDS, PLANS } from './plans'
 import {
   commitAIUsage,
   entitlementDeniedPayload,
@@ -76,7 +75,7 @@ export async function runBillingTests(): Promise<void> {
   if (getAIRequestLimit(pro) !== 300) throw new Error('pro AI limit is incorrect')
   if (canUseFeature(free, 'advanced_ai_coach')) throw new Error('free advanced AI must be disabled')
   if (canUseFeature(premium, 'advanced_ai_coach')) throw new Error('premium advanced AI must remain Pro-only')
-  if (!canUseFeature(premium, 'advanced_meal_planning')) throw new Error('premium advanced meal planning must be enabled')
+  if (canUseFeature(premium, 'advanced_meal_planning')) throw new Error('unimplemented advanced meal planning must remain unavailable')
   if (!canUseFeature(standard, 'advanced_progress')) throw new Error('standard advanced progress must be enabled')
   if (!canUseFeature(pro, 'advanced_progress')) throw new Error('pro advanced progress must be enabled')
   if (canUseFeature(expired, 'advanced_progress')) throw new Error('expired subscription must resolve to Free entitlements')
@@ -92,9 +91,9 @@ export async function runBillingTests(): Promise<void> {
   if (suggestedUpgradePlan('basic') !== 'standard') throw new Error('basic should suggest standard')
   if (suggestedUpgradePlan('premium') !== 'standard') throw new Error('legacy premium should suggest an active plan')
   if (suggestedUpgradePlan('pro') !== null) throw new Error('pro should not suggest a higher plan')
-  if (!validateAllPricingConfigs()) throw new Error('pricing configuration must be consistent')
-  if (RAZORPAY_PLANS['basic-monthly'].offerPrice !== PLANS.basic.prices.monthly.offerPrice) throw new Error('monthly plan price must come from canonical config')
-  if (PLANS.basic.active !== true || PLANS.standard.active !== true || PLANS.premium.active || PLANS.pro.active) throw new Error('existing plan availability must be preserved')
+  if (PAID_PLAN_IDS.join(',') !== 'basic,standard,pro') throw new Error('only the three approved paid tier names should be purchasable')
+  if (PLANS.basic.active !== true || PLANS.standard.active !== true || PLANS.pro.active !== true || PLANS.premium.active) throw new Error('paid plan catalog availability is incorrect')
+  if (Object.values(PLANS).some(plan => 'prices' in plan)) throw new Error('unapproved prices must not be embedded in plan configuration')
   if (Object.values(PLANS).some(plan => plan.trialEligible)) throw new Error('trials must remain disabled pending verification')
 
   const rpcCalls: Array<{ name: string; args: Record<string, unknown> }> = []
