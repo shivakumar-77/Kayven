@@ -106,7 +106,7 @@ export default function BottomNav() {
 
   const wrapStyle: React.CSSProperties = {
     position: 'fixed', left: '50%', bottom: 'calc(env(safe-area-inset-bottom,0px) + 14px)',
-    transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: 400, zIndex: 1000,
+    transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: 400, height:66, boxSizing:'border-box', zIndex: 1000,
   }
 
   if (isAndroid) {
@@ -123,7 +123,7 @@ export default function BottomNav() {
           return (
             <button key={href} ref={action ? quickLogButtonRef : undefined} className="md-tap" onClick={() => activate({ href, action })} onPointerDown={(e) => addRipple(e, href)}
               aria-label={label} aria-haspopup={action ? 'dialog' : undefined} aria-expanded={action ? quickLogOpen : undefined} aria-current={active ? 'page' : undefined}
-              style={{ position:'relative', overflow:'hidden', flex:1, minHeight:44, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, background:'none', border:'none', cursor:'pointer', padding:'2px 1px', borderRadius:16, WebkitTapHighlightColor:'transparent' }}>
+              style={{ position:'relative', overflow:'hidden', flex:1, minHeight:48, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'2px 1px', borderRadius:16, WebkitTapHighlightColor:'transparent' }}>
               {itemRipples.map(rp => (
                 <span key={rp.id} style={{ position:'absolute', left:rp.x, top:rp.y, width:8, height:8, marginLeft:-4, marginTop:-4, borderRadius:'50%', background:'var(--primary)', opacity:0.25, animation:'mdRipple 0.5s ease-out forwards', pointerEvents:'none' }}/>
               ))}
@@ -153,7 +153,7 @@ export default function BottomNav() {
         const active = isActive(href, path)
         return (
           <button key={href} ref={action ? quickLogButtonRef : undefined} className="ios-tap" onClick={() => activate({ href, action })} aria-label={label} aria-haspopup={action ? 'dialog' : undefined} aria-expanded={action ? quickLogOpen : undefined} aria-current={active ? 'page' : undefined}
-            style={{ position:'relative', zIndex:1, flex:1, minWidth:0, minHeight:44, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:1, background:'none', border:'none', cursor:'pointer', padding:'2px 0', WebkitTapHighlightColor:'transparent' }}>
+            style={{ position:'relative', zIndex:1, flex:1, minWidth:0, minHeight:48, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'2px 0', WebkitTapHighlightColor:'transparent' }}>
             <span style={{ display:'grid', placeItems:'center', width:28, height:28, borderRadius:14, background:action?'var(--primary)':'transparent' }}>
               <Icon size={19} strokeWidth={active || action ? 2.2 : 1.8} color={action?'#fff':active?'var(--primary)':'var(--muted)'}/>
             </span>
