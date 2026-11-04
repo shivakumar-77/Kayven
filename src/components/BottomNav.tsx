@@ -83,7 +83,26 @@ export default function BottomNav() {
 
   const activeIdx = NAV.findIndex(item => !item.action && isActive(item.href, path))
   return (
-    <NavPortal><nav aria-label="Bottom navigation" className="kayven-bottom-nav">
+    <NavPortal><nav aria-label="Bottom navigation" className="kayven-bottom-nav"
+      onPointerMove={event => {
+        const navBounds = event.currentTarget.getBoundingClientRect()
+        event.currentTarget.style.setProperty('--nav-light-x', `${event.clientX - navBounds.left}px`)
+        event.currentTarget.style.setProperty('--nav-light-y', `${event.clientY - navBounds.top}px`)
+        if (!(event.target instanceof Element)) return
+        const item = event.target.closest<HTMLButtonElement>('.kayven-bottom-nav__item')
+        if (!item) return
+        const itemBounds = item.getBoundingClientRect()
+        item.style.setProperty('--nav-pointer-x', `${event.clientX - itemBounds.left}px`)
+        item.style.setProperty('--nav-pointer-y', `${event.clientY - itemBounds.top}px`)
+      }}
+      onPointerLeave={event => {
+        event.currentTarget.style.removeProperty('--nav-light-x')
+        event.currentTarget.style.removeProperty('--nav-light-y')
+        event.currentTarget.querySelectorAll<HTMLButtonElement>('.kayven-bottom-nav__item').forEach(item => {
+          item.style.removeProperty('--nav-pointer-x')
+          item.style.removeProperty('--nav-pointer-y')
+        })
+      }}>
       {activeIdx >= 0 && (
         <span aria-hidden="true" className="kayven-bottom-nav__active" style={{ transform:`translateX(${activeIdx * 100}%)` }}/>
       )}

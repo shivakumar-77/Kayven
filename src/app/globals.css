@@ -24,12 +24,17 @@
   --muted: #6D655C;
   --border: #DDD1C2;
   --nav-bg: rgba(255,255,255,0.92);
-  --nav-glass-bg: rgba(255,255,255,0.84);
-  --nav-glass-border: rgba(255,255,255,0.82);
-  --nav-glass-highlight: rgba(255,255,255,0.72);
-  --nav-glass-shadow: 0 12px 32px rgba(58,36,24,0.16), 0 2px 8px rgba(58,36,24,0.08);
-  --nav-active-bg: rgba(168,132,98,0.16);
+  --nav-glass-bg: rgba(255,255,255,0.82);
+  --nav-glass-border: rgba(255,255,255,0.88);
+  --nav-glass-highlight: rgba(255,255,255,0.88);
+  --nav-glass-sheen: rgba(255,255,255,0.56);
+  --nav-glass-edge: rgba(168,132,98,0.3);
+  --nav-glass-lowlight: rgba(58,36,24,0.1);
+  --nav-glass-shadow: 0 18px 44px rgba(58,36,24,0.18), 0 4px 12px rgba(58,36,24,0.08);
+  --nav-active-bg: rgba(168,132,98,0.12);
+  --nav-muted: var(--charcoal);
   --nav-active-color: var(--caramel);
+  --nav-pointer-glow: rgba(255,255,255,0.54);
 
   /* Interactive and chart colors */
   --primary: var(--caramel);
@@ -90,11 +95,16 @@
   --border: #554333;
   --nav-bg: rgba(36,26,20,0.94);
   --nav-glass-bg: rgba(48,34,25,0.88);
-  --nav-glass-border: rgba(213,196,174,0.18);
-  --nav-glass-highlight: rgba(213,196,174,0.12);
-  --nav-glass-shadow: 0 14px 36px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.24);
-  --nav-active-bg: rgba(168,132,98,0.22);
-  --nav-active-color: var(--beige);
+  --nav-glass-border: rgba(213,196,174,0.24);
+  --nav-glass-highlight: rgba(255,248,237,0.24);
+  --nav-glass-sheen: rgba(213,196,174,0.12);
+  --nav-glass-edge: rgba(213,196,174,0.3);
+  --nav-glass-lowlight: rgba(0,0,0,0.32);
+  --nav-glass-shadow: 0 18px 44px rgba(0,0,0,0.44), 0 4px 12px rgba(0,0,0,0.24);
+  --nav-active-bg: rgba(168,132,98,0.18);
+  --nav-muted: var(--beige);
+  --nav-active-color: #F7F0E7;
+  --nav-pointer-glow: rgba(213,196,174,0.2);
   --primary: var(--taupe);
   --primary-light: var(--beige);
   --primary-dark: var(--beige);
@@ -139,11 +149,16 @@
     --border: #554333;
     --nav-bg: rgba(36,26,20,0.94);
     --nav-glass-bg: rgba(48,34,25,0.88);
-    --nav-glass-border: rgba(213,196,174,0.18);
-    --nav-glass-highlight: rgba(213,196,174,0.12);
-    --nav-glass-shadow: 0 14px 36px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.24);
-    --nav-active-bg: rgba(168,132,98,0.22);
-    --nav-active-color: var(--beige);
+    --nav-glass-border: rgba(213,196,174,0.24);
+    --nav-glass-highlight: rgba(255,248,237,0.24);
+    --nav-glass-sheen: rgba(213,196,174,0.12);
+    --nav-glass-edge: rgba(213,196,174,0.3);
+    --nav-glass-lowlight: rgba(0,0,0,0.32);
+    --nav-glass-shadow: 0 18px 44px rgba(0,0,0,0.44), 0 4px 12px rgba(0,0,0,0.24);
+    --nav-active-bg: rgba(168,132,98,0.18);
+    --nav-muted: var(--beige);
+    --nav-active-color: #F7F0E7;
+    --nav-pointer-glow: rgba(213,196,174,0.2);
     --primary: var(--taupe);
     --primary-light: var(--beige);
     --primary-dark: var(--beige);
@@ -258,7 +273,7 @@ body {
   bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
   z-index: 1000;
   display: flex;
-  width: min(calc(100% - 32px), 420px);
+  width: min(calc(100% - 16px), 420px);
   height: 72px;
   padding: 7px;
   box-sizing: border-box;
@@ -266,28 +281,56 @@ body {
   border: 1px solid var(--nav-glass-border);
   border-radius: 28px;
   background: var(--nav-glass-bg);
-  box-shadow: var(--nav-glass-shadow), inset 0 1px 0 var(--nav-glass-highlight);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: var(--nav-glass-shadow);
+  -webkit-backdrop-filter: blur(28px) saturate(175%) contrast(108%);
+  backdrop-filter: blur(28px) saturate(175%) contrast(108%);
   isolation: isolate;
+}
+.kayven-bottom-nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 76% 135% at 50% -44%, var(--nav-glass-sheen), transparent 72%),
+    linear-gradient(132deg, var(--nav-glass-highlight), transparent 28%, transparent 70%, var(--nav-glass-edge));
+  box-shadow:
+    inset 0 1px 0 var(--nav-glass-highlight),
+    inset 0 -1px 0 var(--nav-glass-lowlight);
+  pointer-events: none;
+}
+.kayven-bottom-nav::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(160px 80px at var(--nav-light-x, 50%) var(--nav-light-y, 0%), var(--nav-pointer-glow), transparent 72%);
+  opacity: 0.56;
+  pointer-events: none;
+  transition: opacity 240ms ease;
 }
 .kayven-bottom-nav__active {
   position: absolute;
   inset: 6px auto 6px 7px;
   width: calc((100% - 14px) / 5);
-  z-index: 0;
+  z-index: 1;
   border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
   border-radius: 22px;
   background: var(--nav-active-bg);
-  box-shadow: inset 0 1px 0 var(--nav-glass-highlight);
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow:
+    inset 0 1px 0 var(--nav-glass-highlight),
+    inset 0 -1px 0 var(--nav-glass-lowlight),
+    0 2px 8px rgba(58,36,24,0.06);
+  transition: transform 540ms cubic-bezier(0.22, 1.18, 0.36, 1);
 }
 .kayven-bottom-nav__item {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
-  min-width: 0;
-  min-height: 48px;
+  min-width: 44px;
+  min-height: 50px;
   flex: 1;
   flex-direction: column;
   align-items: center;
@@ -297,19 +340,35 @@ body {
   border: 0;
   border-radius: 20px;
   background: transparent;
-  color: var(--muted);
+  color: var(--nav-muted);
   cursor: pointer;
   font: inherit;
   -webkit-tap-highlight-color: transparent;
-  transition: color 180ms ease, transform 180ms ease;
+  touch-action: manipulation;
+  transition: color 220ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kayven-bottom-nav__item::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  border-radius: inherit;
+  background: radial-gradient(70px 52px at var(--nav-pointer-x, 50%) var(--nav-pointer-y, 50%), var(--nav-pointer-glow), transparent 74%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
 }
 .kayven-bottom-nav__item[aria-current="page"] { color: var(--nav-active-color); }
-.kayven-bottom-nav__item:active { transform: scale(0.94); }
+.kayven-bottom-nav__item:active { transform: scale(0.96); }
+.kayven-bottom-nav__item:active::before,
+.kayven-bottom-nav__item:focus-visible::before { opacity: 0.85; }
 .kayven-bottom-nav__item:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: -2px;
+  outline: 2px solid var(--nav-active-color);
+  outline-offset: -3px;
 }
 .kayven-bottom-nav__icon {
+  position: relative;
+  z-index: 1;
   display: grid;
   width: 28px;
   height: 28px;
@@ -321,10 +380,12 @@ body {
   transform: translateY(-1px);
 }
 .kayven-bottom-nav__label {
+  position: relative;
+  z-index: 1;
   max-width: 100%;
   overflow: hidden;
   color: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 550;
   line-height: 1;
   letter-spacing: 0.01em;
@@ -332,27 +393,42 @@ body {
   white-space: nowrap;
 }
 .kayven-bottom-nav__item[aria-current="page"] .kayven-bottom-nav__label { font-weight: 700; }
-.kayven-bottom-nav__item--action { z-index: 2; overflow: visible; }
+.kayven-bottom-nav__item--action { z-index: 3; overflow: visible; }
 .kayven-bottom-nav__item--action .kayven-bottom-nav__icon {
-  width: 50px;
-  height: 50px;
-  margin-top: -22px;
-  border: 1px solid color-mix(in srgb, var(--beige) 45%, transparent);
+  position: relative;
+  width: 48px;
+  height: 48px;
+  margin-top: -20px;
+  border: 1px solid color-mix(in srgb, var(--beige) 52%, transparent);
   border-radius: 18px;
-  background: linear-gradient(155deg, var(--primary-light), var(--primary));
-  box-shadow: 0 5px 14px var(--primary-glow), inset 0 1px 0 var(--nav-glass-highlight);
+  background:
+    linear-gradient(155deg, color-mix(in srgb, var(--primary-light) 92%, white), var(--primary));
+  box-shadow:
+    0 8px 18px var(--primary-glow),
+    0 2px 5px rgba(26,18,14,0.16),
+    inset 0 1px 0 var(--nav-glass-highlight),
+    inset 0 -1px 0 var(--nav-glass-lowlight);
   color: var(--primary-contrast);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease;
 }
 .kayven-bottom-nav__item--action .kayven-bottom-nav__label {
   margin-top: 1px;
-  color: var(--text-2);
+  color: var(--nav-muted);
+}
+.kayven-bottom-nav__item--action:active .kayven-bottom-nav__icon,
+.kayven-bottom-nav__item--action:focus-visible .kayven-bottom-nav__icon {
+  box-shadow:
+    0 5px 12px var(--primary-glow),
+    0 1px 3px rgba(26,18,14,0.14),
+    inset 0 1px 0 var(--nav-glass-highlight),
+    inset 0 -1px 0 var(--nav-glass-lowlight);
 }
 .kayven-bottom-nav__item--action:active .kayven-bottom-nav__icon {
-  transform: translateY(2px) scale(0.96);
+  transform: translateY(2px) scale(0.97);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .kayven-bottom-nav { background: var(--card); }
+  .kayven-bottom-nav::after { display: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .kayven-bottom-nav {
@@ -362,11 +438,55 @@ body {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+  .kayven-bottom-nav::after,
+  .kayven-bottom-nav__item::before { display: none; }
+}
+@media (prefers-contrast: more) {
+  .kayven-bottom-nav {
+    border: 2px solid var(--nav-active-color);
+    background: var(--card);
+    box-shadow: 0 8px 24px rgba(26,18,14,0.22);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .kayven-bottom-nav::before,
+  .kayven-bottom-nav::after { display: none; }
+  .kayven-bottom-nav__item { color: var(--text); }
+  .kayven-bottom-nav__item[aria-current="page"] { color: var(--nav-active-color); }
+}
+@media (forced-colors: active) {
+  .kayven-bottom-nav {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .kayven-bottom-nav::before,
+  .kayven-bottom-nav::after { display: none; }
+  .kayven-bottom-nav__item,
+  .kayven-bottom-nav__item--action .kayven-bottom-nav__label { color: ButtonText; }
+  .kayven-bottom-nav__active {
+    border-color: Highlight;
+    background: Highlight;
+  }
+  .kayven-bottom-nav__item[aria-current="page"] { color: HighlightText; }
+  .kayven-bottom-nav__item--action .kayven-bottom-nav__icon {
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+    box-shadow: none;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .kayven-bottom-nav__active,
   .kayven-bottom-nav__item,
-  .kayven-bottom-nav__icon { transition-duration: 0.01ms; }
+  .kayven-bottom-nav__icon,
+  .kayven-bottom-nav::after,
+  .kayven-bottom-nav__item::before { transition-duration: 0.01ms; }
+}
+@media (max-width: 360px) {
+  .kayven-bottom-nav__label { font-size: 10px; }
 }
 
 /* ── Cards ── */
