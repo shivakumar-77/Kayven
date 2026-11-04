@@ -12,14 +12,14 @@ export default function SharePage() {
   const [profile, setProfile] = useState(null)
   const [stats, setStats] = useState({ streak: 0, weightLost: 0, totalLogs: 0, daysActive: 0, avgCal: 0 })
   const [copied, setCopied] = useState(false)
-  const [theme, setTheme] = useState('purple')
+  const [theme, setTheme] = useState('caramel')
   const [downloading, setDownloading] = useState(false)
 
   const THEMES = {
-    purple: { from: '#6366f1', to: '#818cf8', text: '#fff', accent: 'rgba(255,255,255,0.2)' },
-    green: { from: '#10b981', to: '#059669', text: '#fff', accent: 'rgba(255,255,255,0.2)' },
-    dark: { from: '#0f172a', to: '#1e293b', text: '#f1f5f9', accent: 'rgba(255,255,255,0.1)' },
-    sunset: { from: '#f59e0b', to: '#ef4444', text: '#fff', accent: 'rgba(255,255,255,0.2)' },
+    caramel: { from: 'var(--primary-dark)', to: 'var(--primary)', text: 'var(--primary-contrast)', accent: 'rgba(255,255,255,0.2)' },
+    espresso: { from: 'var(--espresso)', to: 'var(--cocoa)', text: 'var(--on-dark-brand)', accent: 'rgba(255,255,255,0.1)' },
+    taupe: { from: 'var(--primary)', to: 'var(--primary-light)', text: 'var(--primary-contrast)', accent: 'rgba(255,255,255,0.2)' },
+    beige: { from: 'var(--beige)', to: 'var(--taupe)', text: 'var(--on-light-brand)', accent: 'rgba(26,18,14,0.1)' },
   }
 
   useEffect(() => { load() }, [])
@@ -172,8 +172,8 @@ export default function SharePage() {
           </button>
         </div>
 
-        <div style={{ background: '#fef3c7', borderRadius: 14, padding: '12px 16px', border: '1.5px solid #fde68a', marginTop: 16 }}>
-          <p style={{ fontSize: 12, color: '#d97706', lineHeight: 1.6 }}>💡 To download as image, run: <code style={{ background: '#fde68a', padding: '1px 6px', borderRadius: 4 }}>npm install html2canvas</code> in your project then redeploy.</p>
+        <div style={{ background: 'var(--orange-bg)', borderRadius: 14, padding: '12px 16px', border: '1.5px solid var(--border)', marginTop: 16 }}>
+          <p style={{ fontSize: 12, color: 'var(--orange)', lineHeight: 1.6 }}>💡 To download as image, run: <code style={{ background: 'var(--border)', padding: '1px 6px', borderRadius: 4 }}>npm install html2canvas</code> in your project then redeploy.</p>
         </div>
       </div>
       <BottomNav/>

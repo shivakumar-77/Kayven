@@ -6,17 +6,21 @@
 <title>Kayven</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#f8f9ff;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;font-family:-apple-system,sans-serif}
-.icon{width:80px;height:80px;background:linear-gradient(135deg,#5146e5,#3730a3);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:#fff;margin-bottom:20px}
-h1{font-size:22px;font-weight:700;color:#1e293b;margin-bottom:8px}
-p{font-size:14px;color:#64748b;text-align:center;line-height:1.6;max-width:260px}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1;margin:20px 4px 0;animation:bounce 1.2s infinite}
+:root{color-scheme:light;--surface:#F7F3ED;--text:#1A120E;--muted:#4A4A46;--primary:#6B4A2E;--on-primary:#fff}
+:root[data-theme="dark"]{color-scheme:dark;--surface:#1A120E;--text:#F7F0E7;--muted:#D5C4AE;--primary:#A88462;--on-primary:#1A120E}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){color-scheme:dark;--surface:#1A120E;--text:#F7F0E7;--muted:#D5C4AE;--primary:#A88462;--on-primary:#1A120E}}
+body{background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;font-family:-apple-system,sans-serif}
+.icon{width:80px;height:80px;background:linear-gradient(135deg,var(--primary),#3A2418);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:var(--on-primary);margin-bottom:20px}
+h1{font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px}
+p{font-size:14px;color:var(--muted);text-align:center;line-height:1.6;max-width:260px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--primary);margin:20px 4px 0;animation:bounce 1.2s infinite}
 .dot:nth-child(2){animation-delay:.2s}
 .dot:nth-child(3){animation-delay:.4s}
 @keyframes bounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
 </style>
 </head>
 <body>
+<script>(function(){var t=localStorage.getItem('Kayven_theme')||'auto';var dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light'})()</script>
 <img class="icon" src="/Kayven.PNG" alt="Kayven logo">
 <h1>Kayven</h1>
 <p>Loading your nutrition dashboard…</p>

@@ -71,7 +71,7 @@ return (
 <h1 style={{fontSize:30,fontWeight:800,letterSpacing:'-0.03em',marginTop:3,color:'var(--text)'}}>Start Workout</h1>
 </div>
 <button onClick={()=>router.push('/profile')} className="press-effect" style={{background:'none',border:'none',cursor:'pointer',padding:0}}>
-<div style={{width:46,height:46,borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,var(--primary),var(--primary-light))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'#fff',border:'2px solid var(--border)'}}>
+<div style={{width:46,height:46,borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,var(--primary),var(--primary-light))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:800,color:'var(--primary-contrast)',border:'2px solid var(--border)'}}>
 {profile?.photo_url?<img src={profile.photo_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>:(profile?.name?.[0]?.toUpperCase()||'?')}
 </div>
 </button>
@@ -84,11 +84,11 @@ className="press-effect pulse-ring fade-in-up"
 style={{width:'100%',background:'linear-gradient(135deg,var(--green),color-mix(in srgb, var(--green) 75%, black))',borderRadius:20,padding:'16px 18px',border:'none',cursor:'pointer',textAlign:'left',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,'--pulse-color':'color-mix(in srgb, var(--green) 35%, transparent)'}}>
 <div style={{minWidth:0}}>
 <div style={{fontSize:11,color:'rgba(255,255,255,0.8)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:4}}>Active workout</div>
-<div style={{fontSize:16,fontWeight:700,color:'#fff',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{activeWorkout.name}</div>
+<div style={{fontSize:16,fontWeight:700,color:'var(--primary-contrast)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{activeWorkout.name}</div>
 <div style={{fontSize:12,color:'rgba(255,255,255,0.85)',fontWeight:500,marginTop:2}}>Tap to resume →</div>
 </div>
 <div style={{width:44,height:44,borderRadius:'50%',background:'rgba(255,255,255,0.22)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="var(--primary-contrast)"><path d="M8 5v14l11-7z"/></svg>
 </div>
 </button>
         )}
@@ -98,10 +98,10 @@ style={{width:'100%',background:'linear-gradient(135deg,var(--green),color-mix(i
 <button onClick={()=>router.push('/workout/active?quick=1')} className="press-effect"
 style={{width:'100%',background:'var(--primary)',borderRadius:20,padding:'18px 20px',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:14,WebkitTapHighlightColor:'transparent',boxShadow:'0 8px 20px -8px var(--primary)'}}>
 <div style={{width:44,height:44,borderRadius:14,background:'rgba(255,255,255,0.18)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="var(--primary-contrast)"><path d="M8 5v14l11-7z"/></svg>
 </div>
 <div style={{textAlign:'left'}}>
-<div style={{fontSize:16,fontWeight:700,color:'#fff'}}>Start an empty workout</div>
+<div style={{fontSize:16,fontWeight:700,color:'var(--primary-contrast)'}}>Start an empty workout</div>
 <div style={{fontSize:12,color:'rgba(255,255,255,0.8)',fontWeight:500,marginTop:1}}>No template needed</div>
 </div>
 </button>
@@ -160,7 +160,7 @@ style={{background:'var(--primary-bg)',border:'1.5px solid var(--primary)',borde
 </div>
 <div style={{fontWeight:700,fontSize:14,marginBottom:4,color:'var(--text)'}}>No templates yet</div>
 <div style={{fontSize:12,color:'var(--muted)',marginBottom:16}}>Create reusable workout routines</div>
-<button onClick={()=>router.push('/workout/template')} className="press-effect" style={{background:'var(--primary)',border:'none',borderRadius:12,padding:'10px 22px',color:'#fff',fontWeight:700,fontSize:13,cursor:'pointer'}}>
+<button onClick={()=>router.push('/workout/template')} className="press-effect" style={{background:'var(--primary)',border:'none',borderRadius:12,padding:'10px 22px',color:'var(--primary-contrast)',fontWeight:700,fontSize:13,cursor:'pointer'}}>
                 Create template
 </button>
 </div>
@@ -177,8 +177,8 @@ style={{background:'var(--primary-bg)',border:'1.5px solid var(--primary)',borde
 </div>
 <div style={{display:'flex',gap:6,marginTop:12}}>
 <button onClick={()=>router.push('/workout/active?template='+t.id)} className="press-effect"
-style={{flex:1,background:'var(--primary)',border:'none',borderRadius:10,padding:'8px',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+style={{flex:1,background:'var(--primary)',border:'none',borderRadius:10,padding:'8px',color:'var(--primary-contrast)',fontSize:12,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="var(--primary-contrast)"><path d="M8 5v14l11-7z"/></svg>
                       Start
 </button>
 <button onClick={()=>router.push('/workout/template?edit='+t.id)} className="press-effect"

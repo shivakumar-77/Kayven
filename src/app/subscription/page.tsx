@@ -246,7 +246,7 @@ export default function SubscriptionPage() {
                   setSelectedPackage(pkg)
                   setPurchaseState('review')
                   setPurchaseError('')
-                }} style={{ minHeight: 46, marginTop: 'auto', padding: '11px 14px', border: 0, borderRadius: 12, background: isCurrentPlan ? 'var(--card2)' : canPurchase ? 'var(--primary)' : 'var(--card2)', color: canPurchase && !isCurrentPlan ? '#fff' : 'var(--muted)', font: 'inherit', fontSize: 14, fontWeight: 800, cursor: canPurchase ? 'pointer' : 'not-allowed' }}>
+                }} style={{ minHeight: 46, marginTop: 'auto', padding: '11px 14px', border: 0, borderRadius: 12, background: isCurrentPlan ? 'var(--card2)' : canPurchase ? 'var(--primary)' : 'var(--card2)', color: canPurchase && !isCurrentPlan ? 'var(--primary-contrast)' : 'var(--muted)', font: 'inherit', fontSize: 14, fontWeight: 800, cursor: canPurchase ? 'pointer' : 'not-allowed' }}>
                   {isCurrentPlan ? 'Current plan' : statusVerified && currentPlanId !== 'free' ? 'Plan changes unavailable' : offerNeedsReview ? 'Offer unavailable' : !pkg ? revenueCat.loading ? 'Loading price…' : 'Unavailable right now' : !subscriptionState?.billingPurchasesEnabled ? 'Purchases unavailable' : 'Review purchase'}
                 </button>
                 {statusVerified && currentPlanId !== 'free' && !isCurrentPlan && <p style={{ margin: '8px 0 0', color: 'var(--muted)', fontSize: 11, lineHeight: 1.4 }}>Plan changes are disabled until the provider’s upgrade/downgrade behavior is verified.</p>}
@@ -261,7 +261,7 @@ export default function SubscriptionPage() {
             </p>
             <p style={{ margin: '0 0 13px', color: 'var(--muted)', fontSize: 12, lineHeight: 1.5 }}>Review the provider’s actual recurring renewal terms and tax details before completing payment. Kayven grants paid access only after the provider confirms the purchase and the server verifies the subscription.</p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              <button type="button" disabled={purchaseState === 'processing'} aria-busy={purchaseState === 'processing'} onClick={() => void confirmPurchase()} style={{ minHeight: 44, padding: '10px 14px', border: 0, borderRadius: 11, background: 'var(--primary)', color: '#fff', fontWeight: 800, cursor: purchaseState === 'processing' ? 'wait' : 'pointer' }}>{purchaseState === 'processing' ? 'Verifying subscription…' : 'Continue to secure checkout'}</button>
+              <button type="button" disabled={purchaseState === 'processing'} aria-busy={purchaseState === 'processing'} onClick={() => void confirmPurchase()} style={{ minHeight: 44, padding: '10px 14px', border: 0, borderRadius: 11, background: 'var(--primary)', color: 'var(--primary-contrast)', fontWeight: 800, cursor: purchaseState === 'processing' ? 'wait' : 'pointer' }}>{purchaseState === 'processing' ? 'Verifying subscription…' : 'Continue to secure checkout'}</button>
               <button type="button" disabled={purchaseState === 'processing'} onClick={() => { setSelectedPackage(null); setPurchaseState('idle') }} style={{ minHeight: 44, padding: '10px 14px', border: '1px solid var(--border)', borderRadius: 11, background: 'var(--card)', color: 'var(--text)', fontWeight: 750, cursor: purchaseState === 'processing' ? 'not-allowed' : 'pointer' }}>Return to plans</button>
             </div>
           </section>}

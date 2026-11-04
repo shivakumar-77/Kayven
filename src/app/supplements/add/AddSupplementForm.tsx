@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const ICONS = ['PillIcon','BottleIcon','SyringeIcon','LeafIcon','BoltIcon','FireIcon','SunIcon','MoonIcon','MuscleIcon','FishIcon','GlassIcon','🍵','CoffeeIcon','BeakerIcon','BatteryIcon','BoneIcon','SproutIcon','NutBoltIcon','HeartIcon','DNAIcon']
-const COLORS = ['#6366f1','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#8b5cf6','#0ea5e9','#14b8a6','#f97316']
+const COLORS = ['var(--primary)','var(--blue)','var(--green)','var(--orange)','var(--red)','var(--primary-light)','var(--blue)','var(--carbs)','var(--fat)','var(--orange)']
 const CATEGORIES = ['Performance','Recovery','Health','Weight','Vitamins','Minerals','Hormones','General']
 const UNITS = ['capsule','tablet','scoop','g','mg','ml','IU','softgel','gummy','drop']
 const FREQUENCIES = [
@@ -20,7 +20,7 @@ export default function AddSupplementForm() {
   const editId = params.get('edit')
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
-    name:'', category:'General', icon:'PillIcon', color:'#6366f1',
+    name:'', category:'General', icon:'PillIcon', color:'var(--primary)',
     dose_amount:'1', dose_unit:'capsule', times_per_day:1,
     frequency:'daily', stock_count:'', stock_unit:'capsule',
     goal:'', notes:''
@@ -34,7 +34,7 @@ export default function AddSupplementForm() {
     const { data } = await supabase.from('supplements').select('*').eq('id', editId).single()
     if (data) setForm({
       name:data.name||'', category:data.category||'General',
-      icon:data.icon||'PillIcon', color:data.color||'#6366f1',
+      icon:data.icon||'PillIcon', color:data.color||'var(--primary)',
       dose_amount:String(data.dose_amount||1), dose_unit:data.dose_unit||'capsule',
       times_per_day:data.times_per_day||1, frequency:data.frequency||'daily',
       stock_count:String(data.stock_count||''), stock_unit:data.stock_unit||'capsule',
@@ -69,14 +69,14 @@ export default function AddSupplementForm() {
         </button>
         <div style={{flex:1,fontWeight:700,fontSize:18}}>{editId?'Edit':'Add'} Supplement</div>
         <button onClick={save} disabled={saving||!form.name.trim()}
-          style={{background:'var(--primary)',border:'none',borderRadius:12,padding:'8px 18px',color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer',opacity:!form.name.trim()?0.5:1}}>
+          style={{background:'var(--primary)',border:'none',borderRadius:12,padding:'8px 18px',color:'var(--primary-contrast)',fontWeight:700,fontSize:14,cursor:'pointer',opacity:!form.name.trim()?0.5:1}}>
           {saving?'Saving…':'Save'}
         </button>
       </div>
 
       <div style={{padding:'20px'}}>
         {/* Preview card */}
-        <div style={{background:form.color+'18',borderRadius:20,padding:'16px',border:'1.5px solid '+form.color+'44',marginBottom:20,display:'flex',alignItems:'center',gap:14}}>
+        <div style={{background:`color-mix(in srgb, ${form.color} 10%, transparent)`,borderRadius:20,padding:'16px',border:'1.5px solid '+`color-mix(in srgb, ${form.color} 28%, transparent)`,marginBottom:20,display:'flex',alignItems:'center',gap:14}}>
           <div style={{width:56,height:56,borderRadius:16,background:form.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:28}}>{form.icon}</div>
           <div>
             <div style={{fontWeight:800,fontSize:16,color:form.color}}>{form.name||'Supplement name'}</div>
@@ -124,7 +124,7 @@ export default function AddSupplementForm() {
             {COLORS.map(c=>(
               <button key={c} onClick={()=>setForm(p=>({...p,color:c}))}
                 style={{width:36,height:36,borderRadius:10,background:c,border:form.color===c?'3px solid var(--text)':'3px solid transparent',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',WebkitTapHighlightColor:'transparent'}}>
-                {form.color===c&&<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                {form.color===c&&<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary-contrast)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
               </button>
             ))}
           </div>
@@ -184,7 +184,7 @@ export default function AddSupplementForm() {
         </div>
 
         <button onClick={save} disabled={saving||!form.name.trim()}
-          style={{width:'100%',padding:'16px',background:'var(--primary)',border:'none',borderRadius:16,color:'#fff',fontWeight:700,fontSize:16,cursor:'pointer',opacity:!form.name.trim()?0.5:1}}>
+          style={{width:'100%',padding:'16px',background:'var(--primary)',border:'none',borderRadius:16,color:'var(--primary-contrast)',fontWeight:700,fontSize:16,cursor:'pointer',opacity:!form.name.trim()?0.5:1}}>
           {saving?'Saving…':editId?'Update supplement':'Add supplement'}
         </button>
       </div>

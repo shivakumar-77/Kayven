@@ -62,7 +62,7 @@ const QUIZ = [
 const PLAN_STORAGE_KEY = 'Kayven_mealplan_v2'
 const PLAN_DATE_STORAGE_KEY = 'Kayven_mealplan_v2_date'
 
-const MEAL_COLORS = { Breakfast:'#f59e0b', Lunch:'#10b981', Snack:'#6366f1', Dinner:'#3b82f6' }
+const MEAL_COLORS = { Breakfast:'var(--orange)', Lunch:'var(--green)', Snack:'var(--primary)', Dinner:'var(--blue)' }
 
 const getQuizIcon = (type) => {
   const icons = {
@@ -272,7 +272,7 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
               <button key={i} onClick={()=>selectOption(opt)}
                 style={{padding:'16px 20px',borderRadius:16,border:'2px solid '+(answers[q.id]===opt?'var(--primary)':'var(--border)'),background:answers[q.id]===opt?'var(--primary-bg)':'var(--card)',cursor:'pointer',textAlign:'left',fontSize:15,fontWeight:500,color:answers[q.id]===opt?'var(--primary)':'var(--text)',display:'flex',alignItems:'center',gap:12,transition:'all 0.15s',WebkitTapHighlightColor:'transparent'}}>
                 <div style={{width:28,height:28,borderRadius:'50%',border:'2px solid '+(answers[q.id]===opt?'var(--primary)':'var(--border)'),background:answers[q.id]===opt?'var(--primary)':'transparent',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  {answers[q.id]===opt&&<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                  {answers[q.id]===opt&&<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--primary-contrast)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
                 {opt}
               </button>
@@ -288,7 +288,7 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
                     style={{flex:1,borderRadius:14}}
                     autoFocus/>
                   <button onClick={submitCustom}
-                    style={{padding:'12px 18px',borderRadius:14,background:'var(--primary)',border:'none',color:'#fff',fontWeight:700,cursor:'pointer',flexShrink:0,WebkitTapHighlightColor:'transparent'}}>
+                    style={{padding:'12px 18px',borderRadius:14,background:'var(--primary)',border:'none',color:'var(--primary-contrast)',fontWeight:700,cursor:'pointer',flexShrink:0,WebkitTapHighlightColor:'transparent'}}>
                     →
                   </button>
                 </div>
@@ -344,7 +344,7 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
         <p style={{fontSize:13,color:'var(--muted)',marginBottom:20}}>{plan.summary}</p>
 
         {/* Day totals */}
-        <div style={{background:'linear-gradient(135deg,#10b981,#059669)',borderRadius:20,padding:'18px 20px',marginBottom:16,color:'#fff'}}>
+        <div style={{background:'linear-gradient(135deg,var(--green),var(--green))',borderRadius:20,padding:'18px 20px',marginBottom:16,color:'var(--primary-contrast)'}}>
           <div style={{fontSize:12,opacity:0.85,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:12}}>Today's targets</div>
           <div style={{display:'flex',gap:20}}>
             {[{l:'Calories',v:plan.day_total_cal,u:'kcal'},{l:'Protein',v:plan.day_total_protein,u:'g'},{l:'Carbs',v:plan.day_total_carbs,u:'g'},{l:'Fat',v:plan.day_total_fat,u:'g'},{l:'Fiber',v:plan.day_total_fiber,u:'g'}].map(s=>(
@@ -363,7 +363,7 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
 
         {/* Meal cards with one expanded option at a time */}
         {plan.meals?.map((meal,i)=>{
-          const color  = MEAL_COLORS[meal.type]||'#6366f1'
+          const color  = MEAL_COLORS[meal.type]||'var(--primary)'
           const icon   = getMealIcon(meal.type)
           const options = Array.isArray(meal.options) ? meal.options.slice(0,4) : []
           const selected = Math.min(selectedOptions[meal.type] || 0, Math.max(options.length - 1, 0))
@@ -375,13 +375,13 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
             <div key={i} className="card" style={{marginBottom:14,borderLeft:'4px solid '+color}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
                 <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{width:42,height:42,borderRadius:12,background:color+'18',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
+                  <div style={{width:42,height:42,borderRadius:12,background:`color-mix(in srgb, ${color} 10%, transparent)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{icon}</div>
                   <div><div style={{fontWeight:700,fontSize:15,color}}>{meal.type}</div><div style={{fontSize:11,color:'var(--muted)'}}>{meal.time}</div></div>
                 </div>
                 <div style={{textAlign:'right'}}><div style={{fontWeight:800,fontSize:16,color}}>{nutrition.calories || 0} kcal</div><div style={{fontSize:11,color:'var(--muted)'}}>{nutrition.protein || 0}g P · {nutrition.carbs || 0}g C · {nutrition.fat || 0}g F · {nutrition.fiber || 0}g fiber</div></div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5,marginBottom:14}}>
-                {options.map((candidate,j)=><button key={j} onClick={()=>setSelectedOptions(p=>({...p,[meal.type]:j}))} style={{padding:'8px 4px',borderRadius:9,border:'1px solid '+(selected===j?color:'var(--border)'),background:selected===j?color+'18':'var(--card2)',color:selected===j?color:'var(--muted)',fontSize:10,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>Option {j+1}</button>)}
+                {options.map((candidate,j)=><button key={j} onClick={()=>setSelectedOptions(p=>({...p,[meal.type]:j}))} style={{padding:'8px 4px',borderRadius:9,border:'1px solid '+(selected===j?color:'var(--border)'),background:selected===j?`color-mix(in srgb, ${color} 10%, transparent)`:'var(--card2)',color:selected===j?color:'var(--muted)',fontSize:10,fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>Option {j+1}</button>)}
               </div>
               <div style={{fontWeight:700,fontSize:14,marginBottom:10}}>{option.name}</div>
               {option.ingredients?.map((ingredient,j)=><div key={j} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:j<option.ingredients.length-1?'1px solid var(--border)':'none',fontSize:12}}><span>{ingredient.name}</span><strong>{ingredient.quantity}</strong></div>)}
@@ -389,8 +389,8 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
                 {[['Calories',nutrition.calories,'kcal'],['Protein',nutrition.protein,'g'],['Carbs',nutrition.carbs,'g'],['Fat',nutrition.fat,'g'],['Fiber',nutrition.fiber,'g']].map(([label,value,unit])=><div key={label}><div style={{fontWeight:700,fontSize:12}}>{value || 0}{unit==='kcal'?'':'g'}</div><div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>{label}</div></div>)}
               </div>
               {option.recipe?.length>0&&<div style={{marginTop:12}}><div style={{fontWeight:700,fontSize:12,marginBottom:5}}>How to make</div><ol style={{paddingLeft:20,margin:0,color:'var(--text-2)',fontSize:12,lineHeight:1.6}}>{option.recipe.map((step,j)=><li key={j}>{step}</li>)}</ol></div>}
-              {option.tip&&<div style={{marginTop:12,padding:'10px 12px',background:color+'12',borderRadius:10,fontSize:12,color:color,fontWeight:500}}>Tip: {option.tip}</div>}
-              <button onClick={()=>!logged&&logMeal(meal,option)} disabled={logging===meal.type||logged} style={{width:'100%',marginTop:14,padding:'12px',borderRadius:12,background:logged?'#d1fae5':color,color:logged?'#059669':'#fff',border:logged?'1.5px solid #6ee7b7':'none',fontWeight:700,fontSize:13,cursor:logged?'default':'pointer',transition:'all 0.2s',WebkitTapHighlightColor:'transparent'}}>{logging===meal.type?'Logging…':logged?'✓ Logged':'+ Log this meal'}</button>
+              {option.tip&&<div style={{marginTop:12,padding:'10px 12px',background:`color-mix(in srgb, ${color} 8%, transparent)`,borderRadius:10,fontSize:12,color:color,fontWeight:500}}>Tip: {option.tip}</div>}
+              <button onClick={()=>!logged&&logMeal(meal,option)} disabled={logging===meal.type||logged} style={{width:'100%',marginTop:14,padding:'12px',borderRadius:12,background:logged?'var(--green-bg)':color,color:logged?'var(--green)':'var(--colored-label)',border:logged?'1.5px solid var(--green)':'none',fontWeight:700,fontSize:13,cursor:logged?'default':'pointer',transition:'all 0.2s',WebkitTapHighlightColor:'transparent'}}>{logging===meal.type?'Logging…':logged?'✓ Logged':'+ Log this meal'}</button>
             </div>
           )
         })}
@@ -411,9 +411,9 @@ Return exactly four genuinely different options for each of Breakfast, Lunch, Sn
 
         {/* Hydration */}
         {plan.hydration_tip&&(
-          <div style={{background:'#dbeafe',borderRadius:16,padding:'14px 16px',border:'1.5px solid #93c5fd',marginBottom:16}}>
-            <div style={{fontWeight:700,fontSize:13,color:'#2563eb',marginBottom:4}}>💧 Hydration tip</div>
-            <div style={{fontSize:13,color:'#1d4ed8',lineHeight:1.6}}>{plan.hydration_tip}</div>
+          <div style={{background:'var(--blue-bg)',borderRadius:16,padding:'14px 16px',border:'1.5px solid var(--blue)',marginBottom:16}}>
+            <div style={{fontWeight:700,fontSize:13,color:'var(--blue)',marginBottom:4}}>💧 Hydration tip</div>
+            <div style={{fontSize:13,color:'var(--blue)',lineHeight:1.6}}>{plan.hydration_tip}</div>
           </div>
         )}
       </div>

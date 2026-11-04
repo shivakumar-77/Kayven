@@ -3,36 +3,58 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root {
-  /* Brand */
-  --primary:       #6366f1;
-  --primary-light: #818cf8;
-  --primary-dark:  #4f46e5;
-  --primary-bg:    #eef2ff;
-  --primary-glow:  rgba(99,102,241,0.25);
+  color-scheme: light;
 
-  /* Surfaces — Light */
-  --surface:    #f5f5f7;
-  --surface-2:  #ffffff;
-  --card:       #ffffff;
-  --card2:      #f0f0f3;
-  --card3:      #e8e8ed;
-  --text:       #1c1c1e;
-  --text-2:     #3a3a3c;
-  --muted:      #8e8e93;
-  --border:     #d1d1d6;
-  --nav-bg:     rgba(255,255,255,0.85);
+  /* Brand palette */
+  --espresso: #1A120E;
+  --cocoa: #3A2418;
+  --caramel: #6B4A2E;
+  --taupe: #A88462;
+  --beige: #D5C4AE;
+  --charcoal: #4A4A46;
 
-  /* Semantic colors */
-  --green:      #30d158;
-  --green-bg:   #f0fdf4;
-  --red:        #ff453a;
-  --red-bg:     #fff1f2;
-  --orange:     #ff9f0a;
-  --orange-bg:  #fff7ed;
-  --blue:       #0a84ff;
-  --blue-bg:    #eff6ff;
-  --purple:     #bf5af2;
-  --purple-bg:  #faf5ff;
+  /* Light surfaces and content */
+  --surface: #F7F3ED;
+  --surface-2: #FFFFFF;
+  --card: #FFFFFF;
+  --card2: #F0E8DE;
+  --card3: #E5D8C8;
+  --text: var(--espresso);
+  --text-2: var(--charcoal);
+  --muted: #6D655C;
+  --border: #DDD1C2;
+  --nav-bg: rgba(255,255,255,0.92);
+  --nav-glass-bg: rgba(255,255,255,0.84);
+  --nav-glass-border: rgba(255,255,255,0.82);
+  --nav-glass-highlight: rgba(255,255,255,0.72);
+  --nav-glass-shadow: 0 12px 32px rgba(58,36,24,0.16), 0 2px 8px rgba(58,36,24,0.08);
+  --nav-active-bg: rgba(168,132,98,0.16);
+  --nav-active-color: var(--caramel);
+
+  /* Interactive and chart colors */
+  --primary: var(--caramel);
+  --primary-light: var(--taupe);
+  --primary-dark: var(--cocoa);
+  --primary-contrast: #FFFFFF;
+  --on-dark-brand: #FFFFFF;
+  --on-light-brand: var(--espresso);
+  --primary-bg: #EFE5D9;
+  --switch-thumb: #FFFFFF;
+  --primary-glow: rgba(107,74,46,0.2);
+  --protein: var(--caramel);
+  --carbs: var(--taupe);
+  --fat: var(--charcoal);
+  --water: #496982;
+  --colored-label: #FFFFFF;
+  --figure-neutral: var(--charcoal);
+  --green: #286246;
+  --green-bg: #E7F1EB;
+  --red: #B33D32;
+  --red-bg: #FBEDEA;
+  --orange: #81501E;
+  --orange-bg: #F5EBDD;
+  --blue: #496982;
+  --blue-bg: #E8EFF2;
 
   /* Safe area */
   --sat: env(safe-area-inset-top,    0px);
@@ -51,52 +73,104 @@
   --shadow-sm:  0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md:  0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   --shadow-lg:  0 10px 30px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.05);
-  --shadow-primary: 0 8px 24px rgba(99,102,241,0.30);
+  --shadow-primary: 0 8px 24px rgba(58,36,24,0.2);
 }
 
 /* ── Dark theme ── */
 [data-theme="dark"] {
-  --surface:    #000000;
-  --surface-2:  #1c1c1e;
-  --card:       #1c1c1e;
-  --card2:      #2c2c2e;
-  --card3:      #3a3a3c;
-  --text:       #ffffff;
-  --text-2:     #ebebf5;
-  --muted:      #636366;
-  --border:     #38383a;
-  --nav-bg:     rgba(28,28,30,0.9);
-  --primary-bg: rgba(99,102,241,0.15);
-  --green-bg:   rgba(48,209,88,0.12);
-  --red-bg:     rgba(255,69,58,0.12);
-  --orange-bg:  rgba(255,159,10,0.12);
-  --blue-bg:    rgba(10,132,255,0.12);
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md:  0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg:  0 10px 30px rgba(0,0,0,0.5);
+  color-scheme: dark;
+  --surface: #1A120E;
+  --surface-2: #241A14;
+  --card: #302219;
+  --card2: #3A2418;
+  --card3: #4A3425;
+  --text: #F7F0E7;
+  --text-2: #D5C4AE;
+  --muted: #C5A987;
+  --border: #554333;
+  --nav-bg: rgba(36,26,20,0.94);
+  --nav-glass-bg: rgba(48,34,25,0.88);
+  --nav-glass-border: rgba(213,196,174,0.18);
+  --nav-glass-highlight: rgba(213,196,174,0.12);
+  --nav-glass-shadow: 0 14px 36px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.24);
+  --nav-active-bg: rgba(168,132,98,0.22);
+  --nav-active-color: var(--beige);
+  --primary: var(--taupe);
+  --primary-light: var(--beige);
+  --primary-dark: var(--beige);
+  --primary-contrast: var(--espresso);
+  --on-dark-brand: #F7F0E7;
+  --on-light-brand: var(--espresso);
+  --primary-bg: #3A2418;
+  --switch-thumb: #F7F0E7;
+  --primary-glow: rgba(168,132,98,0.28);
+  --protein: var(--beige);
+  --carbs: var(--taupe);
+  --fat: #C5A987;
+  --water: #A8C6D9;
+  --colored-label: var(--espresso);
+  --figure-neutral: var(--beige);
+  --green: #8BC49B;
+  --green-bg: rgba(139,196,155,0.16);
+  --red: #FF8A7E;
+  --red-bg: rgba(255,138,126,0.16);
+  --orange: #E9B66F;
+  --orange-bg: rgba(233,182,111,0.16);
+  --blue: #A8C6D9;
+  --blue-bg: rgba(168,198,217,0.16);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.22);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.28);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.36);
+  --shadow-primary: 0 8px 24px rgba(168,132,98,0.22);
 }
 
 /* ── Auto theme ── */
 @media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) { color-scheme: dark; }
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    --surface:    #000000;
-    --surface-2:  #1c1c1e;
-    --card:       #1c1c1e;
-    --card2:      #2c2c2e;
-    --card3:      #3a3a3c;
-    --text:       #ffffff;
-    --text-2:     #ebebf5;
-    --muted:      #636366;
-    --border:     #38383a;
-    --nav-bg:     rgba(28,28,30,0.9);
-    --primary-bg: rgba(99,102,241,0.15);
-    --green-bg:   rgba(48,209,88,0.12);
-    --red-bg:     rgba(255,69,58,0.12);
-    --orange-bg:  rgba(255,159,10,0.12);
-    --blue-bg:    rgba(10,132,255,0.12);
-    --shadow-sm:  0 1px 3px rgba(0,0,0,0.3);
-    --shadow-md:  0 4px 12px rgba(0,0,0,0.4);
-    --shadow-lg:  0 10px 30px rgba(0,0,0,0.5);
+    --surface: #1A120E;
+    --surface-2: #241A14;
+    --card: #302219;
+    --card2: #3A2418;
+    --card3: #4A3425;
+    --text: #F7F0E7;
+    --text-2: #D5C4AE;
+    --muted: #C5A987;
+    --border: #554333;
+    --nav-bg: rgba(36,26,20,0.94);
+    --nav-glass-bg: rgba(48,34,25,0.88);
+    --nav-glass-border: rgba(213,196,174,0.18);
+    --nav-glass-highlight: rgba(213,196,174,0.12);
+    --nav-glass-shadow: 0 14px 36px rgba(0,0,0,0.42), 0 2px 8px rgba(0,0,0,0.24);
+    --nav-active-bg: rgba(168,132,98,0.22);
+    --nav-active-color: var(--beige);
+    --primary: var(--taupe);
+    --primary-light: var(--beige);
+    --primary-dark: var(--beige);
+    --primary-contrast: var(--espresso);
+    --on-dark-brand: #F7F0E7;
+    --on-light-brand: var(--espresso);
+    --primary-bg: #3A2418;
+    --switch-thumb: #F7F0E7;
+    --primary-glow: rgba(168,132,98,0.28);
+    --protein: var(--beige);
+    --carbs: var(--taupe);
+    --fat: #C5A987;
+    --water: #A8C6D9;
+    --colored-label: var(--espresso);
+    --figure-neutral: var(--beige);
+    --green: #8BC49B;
+    --green-bg: rgba(139,196,155,0.16);
+    --red: #FF8A7E;
+    --red-bg: rgba(255,138,126,0.16);
+    --orange: #E9B66F;
+    --orange-bg: rgba(233,182,111,0.16);
+    --blue: #A8C6D9;
+    --blue-bg: rgba(168,198,217,0.16);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.22);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.28);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.36);
+    --shadow-primary: 0 8px 24px rgba(168,132,98,0.22);
   }
 }
 
@@ -157,7 +231,7 @@ body {
   border-top: 0.5px solid var(--border);
   padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
   z-index: 999;
-  box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -10px 30px rgba(26,18,14,0.08);
 }
 
 .nav-item {
@@ -175,7 +249,124 @@ body {
 /* Active dot indicator */
 .nav-item.active::after {
   content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-  width: 4px; height: 4px; borderRadius: 50%; background: var(--primary);
+  width: 4px; height: 4px; border-radius: 50%; background: var(--primary);
+}
+
+.kayven-bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 1000;
+  display: flex;
+  width: min(calc(100% - 32px), 420px);
+  height: 72px;
+  padding: 7px;
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  border: 1px solid var(--nav-glass-border);
+  border-radius: 28px;
+  background: var(--nav-glass-bg);
+  box-shadow: var(--nav-glass-shadow), inset 0 1px 0 var(--nav-glass-highlight);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  isolation: isolate;
+}
+.kayven-bottom-nav__active {
+  position: absolute;
+  inset: 6px auto 6px 7px;
+  width: calc((100% - 14px) / 5);
+  z-index: 0;
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
+  border-radius: 22px;
+  background: var(--nav-active-bg);
+  box-shadow: inset 0 1px 0 var(--nav-glass-highlight);
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.kayven-bottom-nav__item {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 180ms ease, transform 180ms ease;
+}
+.kayven-bottom-nav__item[aria-current="page"] { color: var(--nav-active-color); }
+.kayven-bottom-nav__item:active { transform: scale(0.94); }
+.kayven-bottom-nav__item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+.kayven-bottom-nav__icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  color: inherit;
+  transition: transform 180ms ease;
+}
+.kayven-bottom-nav__item[aria-current="page"] .kayven-bottom-nav__icon {
+  transform: translateY(-1px);
+}
+.kayven-bottom-nav__label {
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit;
+  font-size: 10px;
+  font-weight: 550;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kayven-bottom-nav__item[aria-current="page"] .kayven-bottom-nav__label { font-weight: 700; }
+.kayven-bottom-nav__item--action { z-index: 2; overflow: visible; }
+.kayven-bottom-nav__item--action .kayven-bottom-nav__icon {
+  width: 50px;
+  height: 50px;
+  margin-top: -22px;
+  border: 1px solid color-mix(in srgb, var(--beige) 45%, transparent);
+  border-radius: 18px;
+  background: linear-gradient(155deg, var(--primary-light), var(--primary));
+  box-shadow: 0 5px 14px var(--primary-glow), inset 0 1px 0 var(--nav-glass-highlight);
+  color: var(--primary-contrast);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.kayven-bottom-nav__item--action .kayven-bottom-nav__label {
+  margin-top: 1px;
+  color: var(--text-2);
+}
+.kayven-bottom-nav__item--action:active .kayven-bottom-nav__icon {
+  transform: translateY(2px) scale(0.96);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .kayven-bottom-nav { background: var(--card); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .kayven-bottom-nav {
+    border-color: var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow-md);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kayven-bottom-nav__active,
+  .kayven-bottom-nav__item,
+  .kayven-bottom-nav__icon { transition-duration: 0.01ms; }
 }
 
 /* ── Cards ── */
@@ -195,6 +386,11 @@ input, select, textarea {
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
   -webkit-appearance: none; appearance: none;
 }
+input[type="checkbox"] {
+  width: 18px; height: 18px; flex: 0 0 18px;
+  margin: 2px 0 0; padding: 0; border-radius: 4px;
+  accent-color: var(--primary); -webkit-appearance: checkbox; appearance: auto;
+}
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-glow);
@@ -212,7 +408,7 @@ input::placeholder { color: var(--muted); }
 }
 .btn:active { transform: scale(0.97); }
 .btn-primary {
-  background: var(--primary); color: #fff;
+  background: var(--primary); color: var(--primary-contrast);
   box-shadow: var(--shadow-primary);
 }
 .btn-primary:hover { background: var(--primary-dark); }
@@ -222,7 +418,21 @@ input::placeholder { color: var(--muted); }
   border: 0.5px solid var(--border);
 }
 .btn-ghost { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
-.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,69,58,0.2); }
+.btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid color-mix(in srgb, var(--red) 25%, transparent); }
+
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* ── Skeleton loader ── */
 .skeleton {
@@ -429,11 +639,11 @@ input::placeholder { color: var(--muted); }
 .switch-thumb {
   position: absolute; top: 4px; left: 4px;
   width: 20px; height: 20px; border-radius: 50%;
-  background: #fff;
+  background: var(--switch-thumb);
   box-shadow: var(--shadow-sm);
   transition: left 0.2s cubic-bezier(0.4,0,0.2,1);
 }
-.switch[data-checked="true"] .switch-thumb { left: 26px; }
+.switch[data-checked="true"] .switch-thumb { left: 26px; background: var(--primary-contrast); }
 
 /* ── Checkbox ── */
 .checkbox {
@@ -463,7 +673,7 @@ select::-ms-expand { display: none; }
 /* ── pulse-primary — referenced on the dashboard's "Log food" CTA but never defined ── */
 @keyframes pulsePrimary {
   0%, 100% { box-shadow: var(--shadow-primary); }
-  50% { box-shadow: 0 8px 32px rgba(99,102,241,0.5); }
+  50% { box-shadow: 0 8px 32px rgba(107,74,46,0.34); }
 }
 .pulse-primary { animation: pulsePrimary 2.2s ease-in-out infinite; }
 
@@ -471,7 +681,7 @@ select::-ms-expand { display: none; }
    the --pulse-color custom property (e.g. color-mix(in srgb, var(--green) 35%, transparent)),
    so this one utility works for any semantic color instead of each page hardcoding its own rgba. ── */
 @keyframes pulseRing {
-  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-color, rgba(99,102,241,0.35)); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--pulse-color, rgba(107,74,46,0.35)); }
   50% { box-shadow: 0 0 0 8px rgba(0,0,0,0); }
 }
 .pulse-ring { animation: pulseRing 2.4s ease-in-out infinite; }

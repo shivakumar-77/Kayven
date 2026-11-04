@@ -95,14 +95,14 @@ export default function InsightsPage() {
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
           <h1 style={{fontSize:24,fontWeight:700,letterSpacing:'-0.02em'}}>Nutrition Insights</h1>
           <button onClick={()=>router.push('/meal-plan')}
-            style={{background:'var(--primary)',border:'none',borderRadius:12,padding:'8px 14px',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+            style={{background:'var(--primary)',border:'none',borderRadius:12,padding:'8px 14px',color:'var(--primary-contrast)',fontSize:12,fontWeight:700,cursor:'pointer'}}>
             Meal Plan →
           </button>
         </div>
         <p style={{fontSize:13,color:'var(--muted)',marginBottom:20}}>Your weekly AI-powered analysis</p>
 
         {/* Today snapshot */}
-        <div style={{background:'linear-gradient(135deg,var(--primary),#818cf8)',borderRadius:20,padding:'18px 20px',marginBottom:16,color:'#fff'}}>
+        <div style={{background:'linear-gradient(135deg,var(--primary),var(--primary-dark))',borderRadius:20,padding:'18px 20px',marginBottom:16,color:'var(--primary-contrast)'}}>
           <div style={{fontSize:12,opacity:0.85,marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>Today</div>
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
             <div>
@@ -112,12 +112,12 @@ export default function InsightsPage() {
             <div style={{width:64,height:64,position:'relative'}}>
               <svg width="64" height="64" viewBox="0 0 64 64">
                 <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="6"/>
-                <circle cx="32" cy="32" r="28" fill="none" stroke="white" strokeWidth="6" strokeLinecap="round"
+                <circle cx="32" cy="32" r="28" fill="none" stroke="var(--primary-contrast)" strokeWidth="6" strokeLinecap="round"
                   strokeDasharray={String(2*Math.PI*28)}
                   strokeDashoffset={String(2*Math.PI*28*(1-Math.min(1,todayTotals.cal/target)))}
                   style={{transformOrigin:'32px 32px',transform:'rotate(-90deg)'}}/>
               </svg>
-              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'white'}}>
+              <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'var(--primary-contrast)'}}>
                 {Math.round(Math.min(100,todayTotals.cal/target*100))}%
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function InsightsPage() {
               const h = d.cal>0?Math.max(6,(d.cal/maxCal)*84):4
               const over = d.cal>target*1.1
               const under = d.logged && d.cal<target*0.7
-              const color = !d.logged?'var(--border)':over?'#ef4444':under?'#f59e0b':'#10b981'
+              const color = !d.logged?'var(--border)':over?'var(--red)':under?'var(--orange)':'var(--green)'
               const isToday = d.date===new Date().toISOString().slice(0,10)
               return (
                 <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
@@ -175,7 +175,7 @@ export default function InsightsPage() {
 
           {/* Macro breakdown bars */}
           <div style={{display:'flex',gap:8,marginTop:10}}>
-            {[{l:'Protein',avg:avgProtein,target:profile?.protein_target||167,c:'#3b82f6'},{l:'Avg cal',avg:avgCal,target,c:'var(--primary)'}].map(m=>(
+            {[{l:'Protein',avg:avgProtein,target:profile?.protein_target||167,c:'var(--protein)'},{l:'Avg cal',avg:avgCal,target,c:'var(--primary)'}].map(m=>(
               <div key={m.l} style={{flex:1}}>
                 <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
                   <span style={{fontSize:10,color:'var(--muted)',fontWeight:600}}>{m.l}</span>
@@ -195,10 +195,10 @@ export default function InsightsPage() {
             <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>Macro split — 7 day avg</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
               {[
-                {l:'Calories',avg:avgCal,target:profile?.cal_target||1700,u:'kcal',c:'#6366f1',bg:'#eef2ff'},
-                {l:'Protein',avg:avgProtein,target:profile?.protein_target||167,u:'g',c:'#3b82f6',bg:'#dbeafe'},
-                {l:'Carbs',avg:Math.round(weekData.filter(d=>d.logged).reduce((s,d)=>s+d.carb,0)/Math.max(1,daysLogged)),target:profile?.carb_target||144,u:'g',c:'#f59e0b',bg:'#fef3c7'},
-                {l:'Fat',avg:Math.round(weekData.filter(d=>d.logged).reduce((s,d)=>s+d.fat,0)/Math.max(1,daysLogged)),target:profile?.fat_target||60,u:'g',c:'#ef4444',bg:'#fee2e2'},
+                {l:'Calories',avg:avgCal,target:profile?.cal_target||1700,u:'kcal',c:'var(--primary)',bg:'var(--primary-bg)'},
+                {l:'Protein',avg:avgProtein,target:profile?.protein_target||167,u:'g',c:'var(--protein)',bg:'var(--blue-bg)'},
+                {l:'Carbs',avg:Math.round(weekData.filter(d=>d.logged).reduce((s,d)=>s+d.carb,0)/Math.max(1,daysLogged)),target:profile?.carb_target||144,u:'g',c:'var(--carbs)',bg:'var(--orange-bg)'},
+                {l:'Fat',avg:Math.round(weekData.filter(d=>d.logged).reduce((s,d)=>s+d.fat,0)/Math.max(1,daysLogged)),target:profile?.fat_target||60,u:'g',c:'var(--fat)',bg:'var(--card2)'},
               ].map(m=>{
                 const pct=Math.min(100,Math.round(m.avg/m.target*100))
                 return (
@@ -230,7 +230,7 @@ export default function InsightsPage() {
           <>
             {insights.locked ? <UpgradePrompt context="feature_locked" suggestedPlan="standard" title="Advanced progress insights" message={insights.message || 'Advanced progress insights are available on the Standard plan.'} /> : <>
             {/* Score card */}
-            <div style={{background:'linear-gradient(135deg,#10b981,#059669)',borderRadius:20,padding:'20px',marginBottom:16,color:'#fff'}}>
+            <div style={{background:'var(--green)',borderRadius:20,padding:'20px',marginBottom:16,color:'var(--colored-label)'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
                 <div>
                   <div style={{fontSize:12,opacity:0.8,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Weekly score</div>

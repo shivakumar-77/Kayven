@@ -16,11 +16,11 @@ function fmtDate(d, opts) { return new Date(d + 'T12:00:00').toLocaleDateString(
 const IconX = ({ size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
 )
-const IconPlus = ({ size = 22, color = '#fff' }) => (
+const IconPlus = ({ size = 22, color = 'var(--colored-label)' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
 )
 const IconCheck = ({ size = 22 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="var(--primary-contrast)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
 )
 const IconDroplet = ({ size = 20, color = 'var(--primary)' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2.5s6.5 7.4 6.5 12A6.5 6.5 0 1 1 5.5 14.5C5.5 9.9 12 2.5 12 2.5Z" /></svg>
@@ -117,7 +117,7 @@ export default function WeightPage() {
   const height   = profile?.height
   const bmiVal   = latest && height ? parseFloat((latest.weight_kg/((height/100)**2)).toFixed(1)) : null
   const bmiCat   = bmiVal ? bmiVal < 18.5 ? 'Underweight' : bmiVal < 25 ? 'Normal' : bmiVal < 30 ? 'Overweight' : 'Obese' : null
-  const bmiColor = bmiVal ? bmiVal < 18.5 ? '#3b82f6' : bmiVal < 25 ? '#10b981' : bmiVal < 30 ? '#f59e0b' : '#ef4444' : '#6366f1'
+  const bmiColor = bmiVal ? bmiVal < 18.5 ? 'var(--blue)' : bmiVal < 25 ? 'var(--green)' : bmiVal < 30 ? 'var(--orange)' : 'var(--red)' : 'var(--primary)'
   const isAndroid = platform === 'android'
 
   function getChartData() {
@@ -149,7 +149,7 @@ export default function WeightPage() {
       return `C${cpx.toFixed(1)},${prev.y.toFixed(1)} ${cpx.toFixed(1)},${p.y.toFixed(1)} ${p.x.toFixed(1)},${p.y.toFixed(1)}`
     }).join(' ')
     const fill = `${smooth} L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`
-    const lc   = totalChg !== null && totalChg <= 0 ? '#10b981' : '#ef4444'
+    const lc   = totalChg !== null && totalChg <= 0 ? 'var(--green)' : 'var(--red)'
     const yTicks = [min, (min+max)/2, max].map(v => ({ val:v.toFixed(1), y:py(v) }))
 
     return (
@@ -168,8 +168,8 @@ export default function WeightPage() {
         ))}
         {goal && min <= goal && goal <= max+2 && (
           <g>
-            <line x1={PAD} y1={py(goal)} x2={W-PAD} y2={py(goal)} stroke="#6366f1" strokeWidth="1.5" strokeDasharray="5,4"/>
-            <text x={PAD+2} y={py(goal)-4} fontSize="8" fill="#6366f1">Goal {goal}kg</text>
+            <line x1={PAD} y1={py(goal)} x2={W-PAD} y2={py(goal)} stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="5,4"/>
+            <text x={PAD+2} y={py(goal)-4} fontSize="8" fill="var(--primary)">Goal {goal}kg</text>
           </g>
         )}
         <path d={fill} fill="url(#lf)"/>
@@ -181,7 +181,7 @@ export default function WeightPage() {
           if (!isFirst && !isLast && !isMin && !isMax) return null
           return (
             <g key={i}>
-              <circle cx={p.x} cy={p.y} r="5" fill={lc} stroke="white" strokeWidth="2"/>
+              <circle cx={p.x} cy={p.y} r="5" fill={lc} stroke="var(--primary-contrast)" strokeWidth="2"/>
               {(isFirst||isLast) && <text x={p.x} y={p.y-10} textAnchor={isFirst?'start':'end'} fontSize="9.5" fontWeight="700" fill={lc}>{v}</text>}
               {(isMin||isMax) && !isFirst && !isLast && <text x={p.x} y={isMin?p.y+16:p.y-10} textAnchor="middle" fontSize="8.5" fontWeight="700" fill={lc}>{v}</text>}
             </g>
@@ -229,7 +229,7 @@ export default function WeightPage() {
         })}
         {goal && minV <= goal && goal <= maxV && (
           <line x1="0" y1={H-((goal-minV)/(maxV-minV))*H} x2={W} y2={H-((goal-minV)/(maxV-minV))*H}
-            stroke="#6366f1" strokeWidth="1.5" strokeDasharray="5,3"/>
+            stroke="var(--primary)" strokeWidth="1.5" strokeDasharray="5,3"/>
         )}
         {weeks.map((w,i) => {
           const x    = i*(W/weeks.length)+3
@@ -237,7 +237,7 @@ export default function WeightPage() {
           const y    = H - barH
           const prev = weeks.slice(0,i).reverse().find(x => x.avg!==null)
           const going = prev && w.avg ? w.avg - prev.avg : 0
-          const color = !w.avg ? 'var(--border)' : going < -0.05 ? '#10b981' : going > 0.05 ? '#ef4444' : '#6366f1'
+          const color = !w.avg ? 'var(--border)' : going < -0.05 ? 'var(--green)' : going > 0.05 ? 'var(--red)' : 'var(--primary)'
           const isLatest = i === weeks.length-1
           return (
             <g key={i}>
@@ -263,12 +263,12 @@ export default function WeightPage() {
     const maxW = vals.length ? Math.max(...vals) : goal
 
     function dotColor(w) {
-      if (Math.abs(w-goal) < 0.5) return '#10b981'
-      if (w < goal) return '#3b82f6'
+      if (Math.abs(w-goal) < 0.5) return 'var(--green)'
+      if (w < goal) return 'var(--blue)'
       const pct = (w-goal)/(maxW-goal+0.01)
-      if (pct < 0.3) return '#f59e0b'
-      if (pct < 0.6) return '#ef4444'
-      return '#dc2626'
+      if (pct < 0.3) return 'var(--orange)'
+      if (pct < 0.6) return 'var(--red)'
+      return 'var(--red)'
     }
 
     return (
@@ -306,18 +306,18 @@ export default function WeightPage() {
                   aspectRatio:'1', borderRadius:10, display:'flex', flexDirection:'column',
                   alignItems:'center', justifyContent:'center', gap:1,
                   border: isSel?'2px solid var(--primary)':isToday?'2px solid var(--primary)':'2px solid transparent',
-                  background: isSel?'var(--primary)':wt?dotColor(wt)+'22':'var(--card2)',
+                  background: isSel?'var(--primary)':wt?`color-mix(in srgb, ${dotColor(wt)} 14%, transparent)`:'var(--card2)',
                   cursor: isFuture?'default':'pointer', opacity:isFuture?0.3:1, padding:0
                 }}>
-                <span style={{ fontSize:11, fontWeight:isToday||isSel?700:400, color:isSel?'#fff':'var(--text)', lineHeight:1 }}>{day}</span>
-                {wt && <div style={{ width:5, height:5, borderRadius:'50%', background:isSel?'#fff':dotColor(wt) }}/>}
+                <span style={{ fontSize:11, fontWeight:isToday||isSel?700:400, color:isSel?'var(--colored-label)':'var(--text)', lineHeight:1 }}>{day}</span>
+                {wt && <div style={{ width:5, height:5, borderRadius:'50%', background:isSel?'var(--colored-label)':dotColor(wt) }}/>}
               </button>
             )
           })}
         </div>
 
         <div style={{ display:'flex', gap:10, marginTop:14, flexWrap:'wrap' }}>
-          {[{c:'#10b981',l:'At goal'},{c:'#3b82f6',l:'Below goal'},{c:'#f59e0b',l:'Slightly over'},{c:'#ef4444',l:'Over goal'}].map(x=>(
+          {[{c:'var(--green)',l:'At goal'},{c:'var(--blue)',l:'Below goal'},{c:'var(--orange)',l:'Slightly over'},{c:'var(--red)',l:'Over goal'}].map(x=>(
             <div key={x.l} style={{ display:'flex', alignItems:'center', gap:4 }}>
               <div style={{ width:8, height:8, borderRadius:'50%', background:x.c }}/>
               <span style={{ fontSize:10, color:'var(--muted)' }}>{x.l}</span>
@@ -359,7 +359,7 @@ export default function WeightPage() {
 
       {/* Toast — high z-index so it's visible even when the log sheet is open */}
       {msg && (
-        <div style={{ position:'fixed', top:'calc(env(safe-area-inset-top,0px) + 16px)', left:'50%', transform:'translateX(-50%)', zIndex:3000, background: msg==='Logged!' ? '#1e293b' : '#dc2626', color:'#fff', padding:'10px 20px', borderRadius:99, fontSize:13, fontWeight:600, boxShadow:'0 4px 20px rgba(0,0,0,0.3)', whiteSpace:'nowrap' }}>
+        <div style={{ position:'fixed', top:'calc(env(safe-area-inset-top,0px) + 16px)', left:'50%', transform:'translateX(-50%)', zIndex:3000, background: msg==='Logged!' ? 'var(--text)' : 'var(--red)', color:msg==='Logged!'?'var(--surface)':'var(--primary-contrast)', padding:'10px 20px', borderRadius:99, fontSize:13, fontWeight:600, boxShadow:'0 4px 20px rgba(0,0,0,0.3)', whiteSpace:'nowrap' }}>
           {msg==='Logged!' ? '✓ ' : '⚠ '}{msg}
         </div>
       )}
@@ -380,8 +380,8 @@ export default function WeightPage() {
       <div className="fade-in-up" style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, padding:'0 20px', marginBottom:16 }}>
         {[
           { label:'Current', val: latest ? `${latest.weight_kg}` : '—', color:'var(--primary)' },
-          { label:'Goal', val: `${goal}`, color:'#10b981' },
-          { label:'Difference', val: toGoal!==null ? `${toGoal>0?'+':''}${toGoal}` : '—', color: toGoal!==null && toGoal<=0 ? '#10b981' : '#f59e0b' },
+          { label:'Goal', val: `${goal}`, color:'var(--green)' },
+          { label:'Difference', val: toGoal!==null ? `${toGoal>0?'+':''}${toGoal}` : '—', color: toGoal!==null && toGoal<=0 ? 'var(--green)' : 'var(--orange)' },
         ].map(s => (
           <div key={s.label} style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:18, padding:'16px 10px', textAlign:'center', boxShadow:'0 2px 10px rgba(0,0,0,0.03)' }}>
             <div style={{ fontSize:19, fontWeight:800, color:s.color }}>{s.val}<span style={{ fontSize:11, fontWeight:600, marginLeft:2 }}>kg</span></div>
@@ -397,7 +397,7 @@ export default function WeightPage() {
           <div style={{ display:'flex', gap:2, background:'var(--card2)', borderRadius:99, padding:3 }}>
             {[['week','Weekly'],['month','Monthly'],['year','Yearly']].map(([v,l]) => (
               <button key={v} onClick={() => setChartView(v)} className="tap-scale"
-                style={{ padding:'6px 11px', borderRadius:99, fontSize:11, fontWeight:700, cursor:'pointer', border:'none', background:chartView===v?'var(--primary)':'transparent', color:chartView===v?'#fff':'var(--muted)', transition:'background 0.2s' }}>
+                style={{ padding:'6px 11px', borderRadius:99, fontSize:11, fontWeight:700, cursor:'pointer', border:'none', background:chartView===v?'var(--primary)':'transparent', color:chartView===v?'var(--colored-label)':'var(--muted)', transition:'background 0.2s' }}>
                 {l}
               </button>
             ))}
@@ -408,7 +408,7 @@ export default function WeightPage() {
           <div style={{ display:'flex', gap:8, marginTop:14 }}>
             {[
               { l:'Start', v:chartData[0].weight_kg+' kg', c:'var(--muted)' },
-              { l:'Change', v:(parseFloat((chartData[chartData.length-1].weight_kg-chartData[0].weight_kg).toFixed(1))>0?'+':'')+parseFloat((chartData[chartData.length-1].weight_kg-chartData[0].weight_kg).toFixed(1))+' kg', c:chartData[chartData.length-1].weight_kg<chartData[0].weight_kg?'#10b981':'#ef4444' },
+              { l:'Change', v:(parseFloat((chartData[chartData.length-1].weight_kg-chartData[0].weight_kg).toFixed(1))>0?'+':'')+parseFloat((chartData[chartData.length-1].weight_kg-chartData[0].weight_kg).toFixed(1))+' kg', c:chartData[chartData.length-1].weight_kg<chartData[0].weight_kg?'var(--green)':'var(--red)' },
               { l:'Now', v:chartData[chartData.length-1].weight_kg+' kg', c:'var(--primary)' },
             ].map(s=>(
               <div key={s.l} style={{ flex:1, textAlign:'center', background:'var(--surface)', borderRadius:12, padding:'10px 8px', border:'1px solid var(--border)' }}>
@@ -429,7 +429,7 @@ export default function WeightPage() {
           </div>
           <div style={{ height:8, background:'var(--card2)', borderRadius:4, overflow:'hidden', position:'relative' }}>
             <div style={{ position:'absolute', left:0, top:0, height:'100%', width:'100%', display:'flex' }}>
-              {[{c:'#3b82f6',w:25},{c:'#10b981',w:25},{c:'#f59e0b',w:20},{c:'#ef4444',w:16},{c:'#dc2626',w:14}].map((s,i)=>(
+              {[{c:'var(--blue)',w:25},{c:'var(--green)',w:25},{c:'var(--orange)',w:20},{c:'var(--red)',w:16},{c:'var(--red)',w:14}].map((s,i)=>(
                 <div key={i} style={{ height:'100%', width:s.w+'%', background:s.c, opacity:0.45 }}/>
               ))}
             </div>
@@ -494,8 +494,8 @@ export default function WeightPage() {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:16 }}>
               {[
                 { l:'Entries', v:last7.length, c:'var(--primary)' },
-                { l:'Average', v:weekAvg?weekAvg+' kg':'—', c:'#10b981' },
-                { l:'Change', v:weekChg!==null?(weekChg>0?'+':'')+weekChg+' kg':'—', c:weekChg&&weekChg<0?'#10b981':'#ef4444' },
+                { l:'Average', v:weekAvg?weekAvg+' kg':'—', c:'var(--green)' },
+                { l:'Change', v:weekChg!==null?(weekChg>0?'+':'')+weekChg+' kg':'—', c:weekChg&&weekChg<0?'var(--green)':'var(--red)' },
               ].map(s=>(
                 <div key={s.l} style={{ textAlign:'center', background:'var(--surface)', borderRadius:12, padding:'12px 6px', border:'1px solid var(--border)' }}>
                   <div style={{ fontSize:15, fontWeight:800, color:s.c }}>{s.v}</div>
@@ -536,7 +536,7 @@ export default function WeightPage() {
           <div className="fade-in-up" style={{ background:'var(--card)', borderRadius:20, padding:'16px', border:'1px solid var(--border)', marginBottom:14 }}>
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
               <div style={{ fontWeight:700, fontSize:15, color:'var(--text)' }}>Progress to goal</div>
-              <div style={{ fontSize:13, fontWeight:700, color:'#10b981' }}>{goal} kg</div>
+              <div style={{ fontSize:13, fontWeight:700, color:'var(--green)' }}>{goal} kg</div>
             </div>
             {(() => {
               const start   = first?.weight_kg ?? latest.weight_kg
@@ -554,7 +554,7 @@ export default function WeightPage() {
                     <span style={{ fontSize:12, color:'var(--muted)' }}>Goal: {goal} kg</span>
                   </div>
                   <div style={{ height:14, background:'var(--card2)', borderRadius:7, overflow:'hidden' }}>
-                    <div style={{ height:'100%', borderRadius:7, background:'linear-gradient(90deg,#6366f1,#10b981)', width:pct+'%', transition:'width 1s ease' }}/>
+                    <div style={{ height:'100%', borderRadius:7, background:'linear-gradient(90deg,var(--primary),var(--green))', width:pct+'%', transition:'width 1s ease' }}/>
                   </div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:10, textAlign:'center', lineHeight:1.6 }}>
                     {Math.abs(curr-goal).toFixed(1)} kg to go · at 0.5 kg/week ≈ <strong style={{ color:'var(--text)' }}>{weeksLeft} weeks</strong>
@@ -583,8 +583,8 @@ export default function WeightPage() {
                 const rm = sorted.slice(Math.max(0,sorted.length-30))
                 const rateM = rm.length>=2 ? parseFloat(((rm[rm.length-1].weight_kg-rm[0].weight_kg)/4).toFixed(2)) : null
                 return [
-                  { l:'Per week (recent)', v:rateW!==null?(rateW>0?'+':'')+rateW+' kg':'—', c:rateW!==null&&rateW<0?'#10b981':'#ef4444' },
-                  { l:'Per month (est)', v:rateM!==null?(rateM>0?'+':'')+rateM+' kg':'—', c:rateM!==null&&rateM<0?'#10b981':'#ef4444' },
+                  { l:'Per week (recent)', v:rateW!==null?(rateW>0?'+':'')+rateW+' kg':'—', c:rateW!==null&&rateW<0?'var(--green)':'var(--red)' },
+                  { l:'Per month (est)', v:rateM!==null?(rateM>0?'+':'')+rateM+' kg':'—', c:rateM!==null&&rateM<0?'var(--green)':'var(--red)' },
                 ].map(s=>(
                   <div key={s.l} style={{ background:'var(--surface)', borderRadius:14, padding:'16px', border:'1px solid var(--border)', textAlign:'center' }}>
                     <div style={{ fontSize:20, fontWeight:800, color:s.c }}>{s.v}</div>
@@ -616,9 +616,9 @@ export default function WeightPage() {
               <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
                 {[
                   { l:'Entries', v:String(ml.length), c:'var(--primary)' },
-                  { l:'Average', v:mAvg+' kg', c:'#6366f1' },
-                  { l:'Lowest', v:mMin+' kg', c:'#10b981' },
-                  { l:'Highest', v:mMax+' kg', c:'#ef4444' },
+                  { l:'Average', v:mAvg+' kg', c:'var(--primary)' },
+                  { l:'Lowest', v:mMin+' kg', c:'var(--green)' },
+                  { l:'Highest', v:mMax+' kg', c:'var(--red)' },
                 ].map(s=>(
                   <div key={s.l} style={{ textAlign:'center', background:'var(--surface)', borderRadius:12, padding:'12px 6px', border:'1px solid var(--border)' }}>
                     <div style={{ fontSize:14, fontWeight:800, color:s.c }}>{s.v}</div>
@@ -644,10 +644,10 @@ export default function WeightPage() {
                   <div key={log.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 0', borderBottom:i<arr.length-1?'1px solid var(--border)':'none' }}>
                     <div>
                       <div style={{ fontWeight:600, fontSize:14, color:'var(--text)' }}>{fmtDate(log.logged_at,{weekday:'short',day:'numeric',month:'short'})}</div>
-                      {diff!==null && <div style={{ fontSize:11, color:diff<0?'#10b981':diff>0?'#ef4444':'var(--muted)', marginTop:2 }}>{diff>0?'+':''}{diff} kg</div>}
+                      {diff!==null && <div style={{ fontSize:11, color:diff<0?'var(--green)':diff>0?'var(--red)':'var(--muted)', marginTop:2 }}>{diff>0?'+':''}{diff} kg</div>}
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                      <div style={{ fontSize:18, fontWeight:800, color:diff!==null&&diff<0?'#10b981':diff!==null&&diff>0?'#ef4444':'var(--text)' }}>{log.weight_kg} kg</div>
+                      <div style={{ fontSize:18, fontWeight:800, color:diff!==null&&diff<0?'var(--green)':diff!==null&&diff>0?'var(--red)':'var(--text)' }}>{log.weight_kg} kg</div>
                       <button onClick={() => deleteLog(log.id)} className="tap-scale" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--muted)', display:'flex', alignItems:'center', justifyContent:'center', padding:4 }}>
                         <IconX size={16}/>
                       </button>
@@ -672,7 +672,7 @@ export default function WeightPage() {
           width:58, height:58, borderRadius:'50%', cursor:'pointer',
           background:'color-mix(in srgb, var(--primary) 88%, transparent)',
           backdropFilter:'blur(16px) saturate(180%)', WebkitBackdropFilter:'blur(16px) saturate(180%)',
-          border:'1px solid color-mix(in srgb, #fff 25%, transparent)',
+          border:'1px solid var(--border)',
           display:'flex', alignItems:'center', justifyContent:'center',
           boxShadow:'0 8px 24px -6px rgba(0,0,0,0.3)'
         }}>

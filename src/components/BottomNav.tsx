@@ -29,29 +29,9 @@ function NavPortal({ children }) {
 export default function BottomNav() {
   const router = useRouter()
   const path = usePathname() || '/'
-  const [platform, setPlatform] = useState('ios') // default: iOS glass style until detected otherwise
-  const [ripples, setRipples] = useState({})
   const [quickLogOpen, setQuickLogOpen] = useState(false)
   const dialogRef = useRef<HTMLElement | null>(null)
   const quickLogButtonRef = useRef<HTMLButtonElement | null>(null)
-
-  useEffect(() => {
-    if (typeof navigator === 'undefined') return
-    const ua = navigator.userAgent || ''
-    if (/Android/i.test(ua)) setPlatform('android')
-    else if (/iPhone|iPad|iPod/i.test(ua)) setPlatform('ios')
-  }, [])
-
-  function addRipple(e, href) {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const id = Date.now() + Math.random()
-    setRipples(r => ({ ...r, [href]: [...(r[href] || []), { id, x, y }] }))
-    setTimeout(() => {
-      setRipples(r => ({ ...r, [href]: (r[href] || []).filter(rp => rp.id !== id) }))
-    }, 500)
-  }
 
   function activate(item) {
     if (item.action) {
@@ -102,62 +82,20 @@ export default function BottomNav() {
   }
 
   const activeIdx = NAV.findIndex(item => !item.action && isActive(item.href, path))
-  const isAndroid = platform === 'android'
-
-  const wrapStyle: React.CSSProperties = {
-    position: 'fixed', left: '50%', bottom: 'calc(env(safe-area-inset-bottom,0px) + 14px)',
-    transform: 'translateX(-50%)', width: 'calc(100% - 32px)', maxWidth: 400, height:66, boxSizing:'border-box', zIndex: 1000,
-  }
-
-  if (isAndroid) {
-    return (
-      <NavPortal><nav aria-label="Bottom navigation" style={{ ...wrapStyle, display:'flex', padding:'4px 5px', borderRadius:28, background:'var(--card)', border:'1px solid var(--border)', boxShadow:'0 6px 20px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08)' }}>
-        <style jsx>{`
-          @keyframes mdRipple { from { transform: scale(0); opacity: 0.35; } to { transform: scale(22); opacity: 0; } }
-          .md-tap { transition: transform 0.12s ease; }
-          .md-tap:active { transform: scale(0.95); }
-        `}</style>
-        {NAV.map(({ href, label, Icon, action }) => {
-          const active = isActive(href, path)
-          const itemRipples = ripples[href] || []
-          return (
-            <button key={href} ref={action ? quickLogButtonRef : undefined} className="md-tap" onClick={() => activate({ href, action })} onPointerDown={(e) => addRipple(e, href)}
-              aria-label={label} aria-haspopup={action ? 'dialog' : undefined} aria-expanded={action ? quickLogOpen : undefined} aria-current={active ? 'page' : undefined}
-              style={{ position:'relative', overflow:'hidden', flex:1, minHeight:48, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'2px 1px', borderRadius:16, WebkitTapHighlightColor:'transparent' }}>
-              {itemRipples.map(rp => (
-                <span key={rp.id} style={{ position:'absolute', left:rp.x, top:rp.y, width:8, height:8, marginLeft:-4, marginTop:-4, borderRadius:'50%', background:'var(--primary)', opacity:0.25, animation:'mdRipple 0.5s ease-out forwards', pointerEvents:'none' }}/>
-              ))}
-              <span style={{ display:'flex', alignItems:'center', justifyContent:'center', width:'min(48px, 100%)', height:27, borderRadius:14, background: action ? 'var(--primary)' : active ? 'var(--primary-bg)' : 'transparent', transition:'background 0.25s ease' }}>
-                <Icon size={19} strokeWidth={active || action ? 2.2 : 1.8} color={action ? '#fff' : active ? 'var(--primary)' : 'var(--muted)'}/>
-              </span>
-              <span style={{ fontSize:9, lineHeight:1, whiteSpace:'nowrap', fontWeight: active || action ? 700 : 500, color: active || action ? 'var(--primary)' : 'var(--muted)', letterSpacing:'0.01em' }}>{action ? 'Log' : label}</span>
-            </button>
-          )
-        })}
-      </nav>
-      {quickLogOpen && <QuickLogDialog dialogRef={dialogRef} onClose={() => setQuickLogOpen(false)} onSelect={openQuickLogAction}/>}
-      </NavPortal>
-    )
-  }
-
   return (
-    <NavPortal><nav aria-label="Bottom navigation" style={{ ...wrapStyle, position:'fixed', display:'flex', padding:4, borderRadius:999, background:'color-mix(in srgb, var(--surface) 72%, transparent)', backdropFilter:'blur(24px) saturate(180%)', WebkitBackdropFilter:'blur(24px) saturate(180%)', border:'1px solid color-mix(in srgb, var(--border) 70%, transparent)', boxShadow:'0 10px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)' }}>
-      <style jsx>{`
-        .ios-tap { transition: transform 0.15s ease; }
-        .ios-tap:active { transform: scale(0.92); }
-      `}</style>
+    <NavPortal><nav aria-label="Bottom navigation" className="kayven-bottom-nav">
       {activeIdx >= 0 && (
-        <span style={{ position:'absolute', top:4, bottom:4, left:4, width:`calc((100% - 8px) / ${NAV.length})`, transform:`translateX(calc(${activeIdx} * 100%))`, borderRadius:999, background:'var(--primary-bg)', transition:'transform 0.45s cubic-bezier(0.34,1.56,0.64,1)' }}/>
+        <span aria-hidden="true" className="kayven-bottom-nav__active" style={{ transform:`translateX(${activeIdx * 100}%)` }}/>
       )}
       {NAV.map(({ href, label, Icon, action }) => {
         const active = isActive(href, path)
         return (
-          <button key={href} ref={action ? quickLogButtonRef : undefined} className="ios-tap" onClick={() => activate({ href, action })} aria-label={label} aria-haspopup={action ? 'dialog' : undefined} aria-expanded={action ? quickLogOpen : undefined} aria-current={active ? 'page' : undefined}
-            style={{ position:'relative', zIndex:1, flex:1, minWidth:0, minHeight:48, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3, background:'none', border:'none', cursor:'pointer', padding:'2px 0', WebkitTapHighlightColor:'transparent' }}>
-            <span style={{ display:'grid', placeItems:'center', width:28, height:28, borderRadius:14, background:action?'var(--primary)':'transparent' }}>
-              <Icon size={19} strokeWidth={active || action ? 2.2 : 1.8} color={action?'#fff':active?'var(--primary)':'var(--muted)'}/>
+          <button key={href} ref={action ? quickLogButtonRef : undefined} className={`kayven-bottom-nav__item${action ? ' kayven-bottom-nav__item--action' : ''}`} onClick={() => activate({ href, action })}
+            aria-label={label} aria-haspopup={action ? 'dialog' : undefined} aria-expanded={action ? quickLogOpen : undefined} aria-current={active ? 'page' : undefined}>
+            <span className="kayven-bottom-nav__icon">
+              <Icon size={action ? 23 : 20} strokeWidth={active || action ? 2.1 : 1.8}/>
             </span>
-            <span style={{ fontSize:9, lineHeight:1, whiteSpace:'nowrap', fontWeight: active || action ? 700 : 500, letterSpacing:'0.01em', color: active || action ? 'var(--primary)' : 'var(--muted)' }}>{action ? 'Log' : label}</span>
+            <span className="kayven-bottom-nav__label">{action ? 'Log' : label}</span>
           </button>
         )
       })}
@@ -175,6 +113,7 @@ const QUICK_LOG_ACTIONS = [
   { label: 'Supplement', href: '/supplements', icon: '💊' },
   { label: 'Weight', href: '/weight', icon: '⚖️' },
   { label: 'Sleep', href: '/sleep', icon: '🌙' },
+  { label: 'Blood reports', href: '/blood', icon: '🧪' },
 ]
 
 function QuickLogDialog({ dialogRef, onClose, onSelect }) {
@@ -184,7 +123,7 @@ function QuickLogDialog({ dialogRef, onClose, onSelect }) {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div>
             <h2 id="quick-log-title" style={{ margin:0, color:'var(--text)', fontSize:20, fontWeight:800 }}>Quick Log</h2>
-            <p style={{ margin:'4px 0 0', color:'var(--muted)', fontSize:13 }}>Choose what you want to record.</p>
+            <p style={{ margin:'4px 0 0', color:'var(--muted)', fontSize:13 }}>Choose a Kayven log or health record.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close Quick Log" style={{ width:36, height:36, border:0, borderRadius:18, background:'var(--card2)', color:'var(--text)', fontSize:22, cursor:'pointer' }}>×</button>
         </div>

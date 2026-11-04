@@ -70,7 +70,7 @@ export default function SubscriptionStatusCard({ state, managementUrl, onRefresh
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>
         {onRefresh && <button type="button" onClick={() => void onRefresh()} disabled={refreshing} aria-busy={refreshing} style={{ padding: '10px 13px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card2)', color: 'var(--text-2)', fontWeight: 700 }}>{refreshing ? 'Checking subscription...' : 'Refresh subscription'}</button>}
-        {managementUrl && isPaid && <button type="button" onClick={() => setConfirming(true)} style={{ padding: '10px 13px', borderRadius: 12, border: 0, background: 'var(--primary)', color: '#fff', fontWeight: 700 }}>Manage subscription</button>}
+        {managementUrl && isPaid && <button type="button" onClick={() => setConfirming(true)} style={{ padding: '10px 13px', borderRadius: 12, border: 0, background: 'var(--primary)', color: 'var(--primary-contrast)', fontWeight: 700 }}>Manage subscription</button>}
       </div>
 
       {isPaid && !managementUrl && <p style={{ marginTop: 14, color: 'var(--muted)', fontSize: 12 }}>Subscription management is handled through your billing provider. No provider management link is available in this session.</p>}
@@ -78,7 +78,7 @@ export default function SubscriptionStatusCard({ state, managementUrl, onRefresh
       {confirming && <div role="dialog" aria-modal="true" aria-labelledby="manage-confirm-title" style={{ marginTop: 16, padding: 16, borderRadius: 14, background: 'var(--primary-bg)', border: '1px solid color-mix(in srgb, var(--primary) 20%, var(--border))' }}>
         <strong id="manage-confirm-title">Manage your subscription?</strong>
         <p style={{ margin: '8px 0 14px', color: 'var(--muted)', fontSize: 13, lineHeight: 1.5 }}>You will be redirected to your billing provider. Your paid features remain active until the provider confirms any cancellation and the current billing period ends.</p>
-        <div style={{ display: 'flex', gap: 8 }}><button type="button" onClick={openManagement} style={{ padding: '9px 12px', border: 0, borderRadius: 10, background: 'var(--primary)', color: '#fff', fontWeight: 700 }}>Continue</button><button type="button" onClick={() => setConfirming(false)} style={{ padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--card)', color: 'var(--text-2)', fontWeight: 700 }}>Go back</button></div>
+        <div style={{ display: 'flex', gap: 8 }}><button type="button" onClick={openManagement} style={{ padding: '9px 12px', border: 0, borderRadius: 10, background: 'var(--primary)', color: 'var(--primary-contrast)', fontWeight: 700 }}>Continue</button><button type="button" onClick={() => setConfirming(false)} style={{ padding: '9px 12px', border: '1px solid var(--border)', borderRadius: 10, background: 'var(--card)', color: 'var(--text-2)', fontWeight: 700 }}>Go back</button></div>
       </div>}
     </section>
   )

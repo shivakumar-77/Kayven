@@ -6,12 +6,12 @@ import BottomNav from '@/components/BottomNav'
 import { IconByName } from '@/lib/icons'
 
 const MEASUREMENTS = [
-  { key: 'waist', label: 'Waist', icon: 'RulerIcon', color: '#6366f1' },
-  { key: 'chest', label: 'Chest', icon: 'MuscleIcon', color: '#3b82f6' },
-  { key: 'hips', label: 'Hips', icon: 'CircleIcon', color: '#ec4899' },
-  { key: 'arms', label: 'Arms', icon: 'MuscleIcon', color: '#f59e0b' },
-  { key: 'thighs', label: 'Thighs', icon: 'LegIcon', color: '#10b981' },
-  { key: 'shoulders', label: 'Shoulders', icon: 'MuscleIcon', color: '#ef4444' },
+  { key: 'waist', label: 'Waist', icon: 'RulerIcon', color: 'var(--primary)' },
+  { key: 'chest', label: 'Chest', icon: 'MuscleIcon', color: 'var(--blue)' },
+  { key: 'hips', label: 'Hips', icon: 'CircleIcon', color: 'var(--taupe)' },
+  { key: 'arms', label: 'Arms', icon: 'MuscleIcon', color: 'var(--orange)' },
+  { key: 'thighs', label: 'Thighs', icon: 'LegIcon', color: 'var(--green)' },
+  { key: 'shoulders', label: 'Shoulders', icon: 'MuscleIcon', color: 'var(--red)' },
 ]
 
 export default function MeasurementsPage() {
@@ -59,7 +59,7 @@ export default function MeasurementsPage() {
         <path d={path} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
         {pts.map((p, i) => (
           <g key={i}>
-            <circle cx={p.x} cy={p.y} r={i===0||i===pts.length-1?5:3} fill={color} stroke="white" strokeWidth="2"/>
+            <circle cx={p.x} cy={p.y} r={i===0||i===pts.length-1?5:3} fill={color} stroke="var(--primary-contrast)" strokeWidth="2"/>
             {(i===0||i===pts.length-1||data.length<=5) && <text x={p.x} y={p.y-9} textAnchor="middle" fontSize="9" fontWeight="700" fill={color}>{p.d.v}</text>}
           </g>
         ))}
@@ -85,7 +85,7 @@ export default function MeasurementsPage() {
       </div>
 
       <div style={{ padding:'0 20px' }}>
-        {msg && <div style={{ background:'#d1fae5', border:'1.5px solid #6ee7b7', borderRadius:12, padding:'10px 16px', marginBottom:16, fontSize:13, fontWeight:600, color:'#059669' }}>✓ {msg}</div>}
+        {msg && <div style={{ background:'var(--green-bg)', border:'1.5px solid var(--green)', borderRadius:12, padding:'10px 16px', marginBottom:16, fontSize:13, fontWeight:600, color:'var(--green)' }}>✓ {msg}</div>}
 
         {/* Latest vs First comparison */}
         {logs.length >= 2 && (
@@ -99,7 +99,7 @@ export default function MeasurementsPage() {
                   <div key={m.key} style={{ background:'var(--surface)', borderRadius:12, padding:'10px', border:'1.5px solid var(--border)', textAlign:'center' }}>
                     <div style={{ fontSize:10, color:'var(--muted)', fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
                     <div style={{ fontSize:16, fontWeight:800, color:m.color }}>{latest[m.key]}</div>
-                    <div style={{ fontSize:11, fontWeight:700, color:isGood?'#10b981':'#ef4444' }}>
+                    <div style={{ fontSize:11, fontWeight:700, color:isGood?'var(--green)':'var(--red)' }}>
                       {parseFloat(diff)>0?'+':''}{diff} cm
                     </div>
                   </div>
@@ -116,7 +116,7 @@ export default function MeasurementsPage() {
             <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
               {MEASUREMENTS.filter(m => logs.some(l => l[m.key])).map(m => (
                 <button key={m.key} onClick={() => setActiveChart(m.key)}
-                  style={{ padding:'5px 12px', borderRadius:99, fontSize:12, fontWeight:600, cursor:'pointer', border:'1.5px solid '+(activeChart===m.key?m.color:'var(--border)'), background:activeChart===m.key?m.color:'transparent', color:activeChart===m.key?'#fff':'var(--muted)' }}>
+                  style={{ padding:'5px 12px', borderRadius:99, fontSize:12, fontWeight:600, cursor:'pointer', border:'1.5px solid '+(activeChart===m.key?m.color:'var(--border)'), background:activeChart===m.key?m.color:'transparent', color:activeChart===m.key?'var(--colored-label)':'var(--muted)' }}>
                   {m.label}
                 </button>
               ))}

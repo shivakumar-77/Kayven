@@ -137,7 +137,7 @@ export default function RazorpayCheckout({ amount, description, label }: Razorpa
   }
 
   return <div>
-    <button type="button" onClick={startCheckout} disabled={status === 'loading'} aria-busy={status === 'loading'} style={{ padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--primary)', color: '#fff', fontWeight: 700 }}>
+    <button type="button" onClick={startCheckout} disabled={status === 'loading'} aria-busy={status === 'loading'} style={{ padding: '11px 14px', borderRadius: 12, border: '1px solid var(--border)', background: 'var(--primary)', color: 'var(--primary-contrast)', fontWeight: 700 }}>
       {status === 'loading' ? 'Opening checkout...' : label}
     </button>
     {message && <p role="status" aria-live="polite" style={{ marginTop: 10, color: status === 'error' ? 'var(--red)' : 'var(--muted)', fontSize: 13 }}>{message}</p>}

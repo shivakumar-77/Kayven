@@ -254,7 +254,7 @@ export default function LogPage() {
 
   const MacroBadges = ({ p }) => (
     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:16 }}>
-      {[{l:'Cal',v:p.cal,u:'kcal',c:'#6366f1',bg:'#eef2ff'},{l:'Protein',v:p.protein,u:'g',c:'#3b82f6',bg:'#dbeafe'},{l:'Carbs',v:p.carb,u:'g',c:'#f59e0b',bg:'#fef3c7'},{l:'Fat',v:p.fat,u:'g',c:'#ef4444',bg:'#fee2e2'}].map(m=>(
+      {[{l:'Cal',v:p.cal,u:'kcal',c:'var(--primary)',bg:'var(--primary-bg)'},{l:'Protein',v:p.protein,u:'g',c:'var(--blue)',bg:'var(--blue-bg)'},{l:'Carbs',v:p.carb,u:'g',c:'var(--orange)',bg:'var(--orange-bg)'},{l:'Fat',v:p.fat,u:'g',c:'var(--red)',bg:'var(--red-bg)'}].map(m=>(
         <div key={m.l} style={{ background:m.bg, borderRadius:12, padding:'10px 8px', textAlign:'center' }}>
           <div style={{ fontSize:10, color:m.c, fontWeight:600, marginBottom:3 }}>{m.l}</div>
           <div style={{ fontSize:16, fontWeight:700, color:m.c }}>{m.v}</div>
@@ -274,7 +274,7 @@ export default function LogPage() {
           onChange={e => { const v=parseFloat(e.target.value); if(!isNaN(v)&&v>=0) setQty(v) }}
           style={{ textAlign:'center', fontWeight:700, fontSize:20, flex:1, color:'var(--primary)', border:'1.5px solid var(--primary)', borderRadius:12, padding:'10px', background:'var(--primary-bg)', outline:'none' }}/>
         <button onClick={() => setQty(q => q+(food.unit==='piece'||food.unit==='scoop'?1:10))}
-          style={{ width:44, height:44, borderRadius:12, background:'var(--primary)', border:'none', color:'#fff', fontSize:22, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, flexShrink:0 }}>+</button>
+          style={{ width:44, height:44, borderRadius:12, background:'var(--primary)', border:'none', color:'var(--primary-contrast)', fontSize:22, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700, flexShrink:0 }}>+</button>
       </div>
       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
         {(food.unit==='g'||food.unit==='ml'?[50,100,150,200,250,300]:[1,2,3,4,5]).map(v=>(
@@ -293,7 +293,7 @@ export default function LogPage() {
       <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
         {MEAL_TYPES.map(m=>(
           <button key={m} onClick={() => setMealType(m)}
-            style={{ padding:'7px 14px', borderRadius:99, fontSize:12, fontWeight:600, cursor:'pointer', border:'1.5px solid '+(mealType===m?'var(--primary)':'var(--border)'), background:mealType===m?'var(--primary)':'transparent', color:mealType===m?'#fff':'var(--muted)' }}>
+            style={{ padding:'7px 14px', borderRadius:99, fontSize:12, fontWeight:600, cursor:'pointer', border:'1.5px solid '+(mealType===m?'var(--primary)':'var(--border)'), background:mealType===m?'var(--primary)':'transparent', color:mealType===m?'var(--primary-contrast)':'var(--muted)' }}>
             {m.charAt(0).toUpperCase()+m.slice(1)}
           </button>
         ))}
@@ -314,7 +314,7 @@ export default function LogPage() {
         {showStar && (
           <button onClick={() => toggleFav(food)}
             style={{ padding:'12px 14px 12px 0', background:'none', border:'none', cursor:'pointer', width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <StarIcon size={18} color={starred?'#f59e0b':'var(--muted)'} strokeWidth={starred?2.5:1.8}/>
+            <StarIcon size={18} color={starred?'var(--orange)':'var(--muted)'} strokeWidth={starred?2.5:1.8}/>
           </button>
         )}
       </div>
@@ -323,13 +323,13 @@ export default function LogPage() {
 
   const FavCard = ({ food }) => (
     <div style={{ flexShrink:0, width:120, background:'var(--card)', border:'1.5px solid var(--border)', borderRadius:16, overflow:'hidden' }}>
-      <div style={{ background:'linear-gradient(135deg,var(--primary-bg),#e0e7ff)', padding:'14px 12px 8px', textAlign:'center' }}>
-        <div style={{ marginBottom:4, display:'flex', alignItems:'center', justifyContent:'center' }}><StarIcon size={28} color='#f59e0b'/></div>
+      <div style={{ background:'linear-gradient(135deg,var(--primary-bg),var(--primary-bg))', padding:'14px 12px 8px', textAlign:'center' }}>
+        <div style={{ marginBottom:4, display:'flex', alignItems:'center', justifyContent:'center' }}><StarIcon size={28} color='var(--orange)'/></div>
         <div style={{ fontWeight:700, fontSize:12, color:'var(--text)', lineHeight:1.3 }}>{food.name}</div>
       </div>
       <div style={{ padding:'8px 10px 10px' }}>
         <div style={{ fontSize:11, color:'var(--primary)', fontWeight:700, marginBottom:6 }}>{food.cal} kcal · {food.protein}g P</div>
-        <button onClick={() => logFood(food)} style={{ width:'100%', padding:'7px', borderRadius:10, background:'var(--primary)', color:'#fff', border:'none', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+        <button onClick={() => logFood(food)} style={{ width:'100%', padding:'7px', borderRadius:10, background:'var(--primary)', color:'var(--primary-contrast)', border:'none', fontSize:11, fontWeight:700, cursor:'pointer' }}>
           + Log now
         </button>
       </div>
@@ -340,7 +340,7 @@ export default function LogPage() {
     <div className="page-root">
       {/* Toast */}
       {toastMsg && (
-        <div role={toastError ? 'alert' : 'status'} aria-live={toastError ? 'assertive' : 'polite'} style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', background:toastError?'#dc2626':'#1e293b', color:'#fff', padding:'10px 20px', borderRadius:99, fontSize:13, fontWeight:600, zIndex:9999, boxShadow:'0 4px 20px rgba(0,0,0,0.3)', whiteSpace:'nowrap' }}>
+        <div role={toastError ? 'alert' : 'status'} aria-live={toastError ? 'assertive' : 'polite'} style={{ position:'fixed', top:20, left:'50%', transform:'translateX(-50%)', background:toastError?'var(--red)':'var(--text)', color:toastError?'var(--primary-contrast)':'var(--surface)', padding:'10px 20px', borderRadius:99, fontSize:13, fontWeight:600, zIndex:9999, boxShadow:'0 4px 20px rgba(0,0,0,0.3)', whiteSpace:'nowrap' }}>
           {toastMsg}
         </div>
       )}
@@ -352,8 +352,8 @@ export default function LogPage() {
           const Icon = t.i
           return (
           <button key={t.id} onClick={() => setTab(t.id)}
-            style={{ padding:'9px 16px', fontSize:13, fontWeight:600, borderRadius:12, whiteSpace:'nowrap', cursor:'pointer', border:'1.5px solid '+(tab===t.id?'var(--primary)':'var(--border)'), background:tab===t.id?'var(--primary)':'var(--card)', color:tab===t.id?'#fff':'var(--muted)', display:'flex', alignItems:'center', gap:6 }}>
-            <Icon size={16} color={tab===t.id?'#fff':'currentColor'} strokeWidth={1.8}/> {t.l}
+            style={{ padding:'9px 16px', fontSize:13, fontWeight:600, borderRadius:12, whiteSpace:'nowrap', cursor:'pointer', border:'1.5px solid '+(tab===t.id?'var(--primary)':'var(--border)'), background:tab===t.id?'var(--primary)':'var(--card)', color:tab===t.id?'var(--primary-contrast)':'var(--muted)', display:'flex', alignItems:'center', gap:6 }}>
+            <Icon size={16} color={tab===t.id?'var(--primary-contrast)':'currentColor'} strokeWidth={1.8}/> {t.l}
           </button>
           )
         })}
@@ -390,9 +390,9 @@ export default function LogPage() {
                     </button>
                   ))}
                   <button onClick={() => setShowAllCategories(true)}
-                    style={{ padding:'8px 14px', borderRadius:99, background:'var(--primary)', border:'none', cursor:'pointer', fontSize:12, fontWeight:700, color:'#fff', whiteSpace:'nowrap', flexShrink:0, display:'flex', alignItems:'center', gap:5 }}>
+                    style={{ padding:'8px 14px', borderRadius:99, background:'var(--primary)', border:'none', cursor:'pointer', fontSize:12, fontWeight:700, color:'var(--primary-contrast)', whiteSpace:'nowrap', flexShrink:0, display:'flex', alignItems:'center', gap:5 }}>
                     All categories
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--primary-contrast)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                   </button>
                 </div>
               </div>
@@ -435,7 +435,7 @@ export default function LogPage() {
                 <div style={{ display:'flex', gap:6 }}>
                   {['Veg', 'Protein', 'Low Cal'].map((diet) => (
                     <button key={diet} onClick={() => setSelectedDiet(selectedDiet === diet ? null : diet)}
-                      style={{ padding:'8px 12px', borderRadius:99, background:selectedDiet===diet?'var(--primary)':'var(--primary-bg)', border:'1.5px solid '+(selectedDiet===diet?'var(--primary)':'var(--border)'), cursor:'pointer', fontSize:12, fontWeight:600, color:selectedDiet===diet?'#fff':'var(--primary)', whiteSpace:'nowrap' }}>
+                      style={{ padding:'8px 12px', borderRadius:99, background:selectedDiet===diet?'var(--primary)':'var(--primary-bg)', border:'1.5px solid '+(selectedDiet===diet?'var(--primary)':'var(--border)'), cursor:'pointer', fontSize:12, fontWeight:600, color:selectedDiet===diet?'var(--primary-contrast)':'var(--primary)', whiteSpace:'nowrap' }}>
                       {diet}
                     </button>
                   ))}
@@ -497,8 +497,8 @@ export default function LogPage() {
                   </div>
                   <div style={{ display:'flex', gap:8, flexShrink:0 }}>
                     <button onClick={() => toggleFav(selected)}
-                      style={{ width:38, height:38, borderRadius:10, background:'var(--card2)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:favNames.has(selected.name)?'#f59e0b':'var(--muted)', transition:'color 0.2s' }}>
-                      <StarIcon size={18} color={favNames.has(selected.name)?'#f59e0b':'var(--muted)'} strokeWidth={favNames.has(selected.name)?2.5:1.8}/>
+                      style={{ width:38, height:38, borderRadius:10, background:'var(--card2)', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:favNames.has(selected.name)?'var(--orange)':'var(--muted)', transition:'color 0.2s' }}>
+                      <StarIcon size={18} color={favNames.has(selected.name)?'var(--orange)':'var(--muted)'} strokeWidth={favNames.has(selected.name)?2.5:1.8}/>
                     </button>
                     <button onClick={() => { setSelected(null); setQuery('') }}
                       style={{ width:38, height:38, borderRadius:10, background:'var(--card2)', border:'none', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--muted)' }}>×</button>
@@ -522,7 +522,7 @@ export default function LogPage() {
           <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={scanPhoto} style={{ display:'none' }}/>
           {!photoPreview && !selected && (
             <div style={{ textAlign:'center', padding:'24px 0' }}>
-              <div style={{ width:80, height:80, background:'linear-gradient(135deg,#f59e0b,#ef4444)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}><TagIcon size={40} color='#fff'/></div>
+              <div style={{ width:80, height:80, background:'linear-gradient(135deg,var(--orange),var(--red))', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px' }}><TagIcon size={40} color='var(--colored-label)'/></div>
               <p style={{ fontWeight:700, fontSize:18, marginBottom:8 }}>Recipe & Label Scanner</p>
               <p style={{ color:'var(--muted)', fontSize:13, marginBottom:8, lineHeight:1.7 }}>
                 Take a photo of any food label, nutrition facts panel, or recipe card.
@@ -533,8 +533,8 @@ export default function LogPage() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:28 }}>
                 {[{Icon:PackageIcon,l:'Food labels'},{Icon:FoodIcon,l:'Recipes'},{Icon:ReceiptIcon,l:'Menus'}].map(x=>(
                   <div key={x.l} style={{ background:'var(--card)', borderRadius:16, padding:'16px 10px', border:'1.5px solid var(--border)', textAlign:'center' }}>
-                    <div style={{ width:44, height:44, margin:'0 auto 6px', borderRadius:14, background:'rgba(99,102,241,0.08)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <x.Icon size={24} color='#6366f1' />
+                    <div style={{ width:44, height:44, margin:'0 auto 6px', borderRadius:14, background:'var(--primary-bg)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <x.Icon size={24} color='var(--primary)' />
                     </div>
                     <div style={{ fontSize:12, fontWeight:600, color:'var(--muted)' }}>{x.l}</div>
                   </div>
@@ -557,8 +557,8 @@ export default function LogPage() {
           {scanError && !scanning && (
             <div>
               {photoPreview && <img src={photoPreview} alt="Food" style={{ width:'100%', borderRadius:20, marginBottom:16, maxHeight:280, objectFit:'cover' }}/>}
-              <div style={{ background:'#fef2f2', border:'1.5px solid #fecaca', borderRadius:14, padding:'12px 16px', marginBottom:16 }}>
-                <p style={{ color:'#dc2626', fontSize:13 }}>{scanError}</p>
+              <div style={{ background:'var(--red-bg)', border:'1.5px solid var(--border)', borderRadius:14, padding:'12px 16px', marginBottom:16 }}>
+                <p style={{ color:'var(--red)', fontSize:13 }}>{scanError}</p>
               </div>
               <button className="btn btn-primary" style={{ width:'100%' }} onClick={() => { setPhotoPreview(null); setScanError(''); fileRef.current?.click() }}>Try again</button>
             </div>
@@ -569,12 +569,12 @@ export default function LogPage() {
               {photoPreview && <img src={photoPreview} alt="Food" style={{ width:'100%', borderRadius:20, marginBottom:16, maxHeight:240, objectFit:'cover' }}/>}
               <div className="card">
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                  <div style={{ background:'#fef3c7', color:'#d97706', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99, display:'flex', alignItems:'center', gap:6 }}><TagIcon size={14} color='#d97706'/> LABEL SCANNED</div>
+                  <div style={{ background:'var(--orange-bg)', color:'var(--orange)', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99, display:'flex', alignItems:'center', gap:6 }}><TagIcon size={14} color='var(--orange)'/> LABEL SCANNED</div>
                 </div>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
                   <div style={{ fontWeight:700, fontSize:17 }}>{selected.name}</div>
                   <button onClick={() => toggleFav(selected)}
-                    style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', color:favNames.has(selected.name)?'#f59e0b':'var(--muted)', flexShrink:0 }}>
+                    style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', color:favNames.has(selected.name)?'var(--orange)':'var(--muted)', flexShrink:0 }}>
                     {favNames.has(selected.name)?'AwardIcon':'☆'}
                   </button>
                 </div>
@@ -619,8 +619,8 @@ export default function LogPage() {
           {scanError && !scanning && (
             <div>
               {photoPreview && <img src={photoPreview} alt="" style={{ width:'100%', borderRadius:20, marginBottom:16, maxHeight:280, objectFit:'cover' }}/>}
-              <div style={{ background:'#fef2f2', border:'1.5px solid #fecaca', borderRadius:14, padding:'12px 16px', marginBottom:16 }}>
-                <p style={{ color:'#dc2626', fontSize:13 }}>{scanError}</p>
+              <div style={{ background:'var(--red-bg)', border:'1.5px solid var(--border)', borderRadius:14, padding:'12px 16px', marginBottom:16 }}>
+                <p style={{ color:'var(--red)', fontSize:13 }}>{scanError}</p>
               </div>
               <button className="btn btn-primary" style={{ width:'100%' }} onClick={() => { setPhotoPreview(null); setScanError(''); fileRef.current?.click() }}>Try again</button>
             </div>
@@ -630,8 +630,8 @@ export default function LogPage() {
               {photoPreview && <img src={photoPreview} alt="" style={{ width:'100%', borderRadius:20, marginBottom:16, maxHeight:240, objectFit:'cover' }}/>}
               <div className="card">
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                  <div style={{ background:'#d1fae5', color:'#059669', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99 }}>AI IDENTIFIED</div>
-                  <button onClick={() => toggleFav(selected)} style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', color:favNames.has(selected.name)?'#f59e0b':'var(--muted)' }}>
+                  <div style={{ background:'var(--green-bg)', color:'var(--green)', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99 }}>AI IDENTIFIED</div>
+                  <button onClick={() => toggleFav(selected)} style={{ background:'none', border:'none', fontSize:22, cursor:'pointer', color:favNames.has(selected.name)?'var(--orange)':'var(--muted)' }}>
                     {favNames.has(selected.name)?'AwardIcon':'☆'}
                   </button>
                 </div>
@@ -663,7 +663,7 @@ export default function LogPage() {
             <div style={{ fontSize:12, fontWeight:700, color:'var(--muted)', marginBottom:6, textTransform:'uppercase', letterSpacing:'0.05em' }}>Food name</div>
             <div style={{ display:'flex', gap:8, alignItems:'flex-end' }}>
               <input type="text" placeholder="e.g. Chicken tikka…" value={manual.name} onChange={e => setManual(p=>({...p,name:e.target.value}))} style={{ flex:1 }}/>
-              <button style={{ flexShrink:0, padding:'11px 12px', fontSize:12, fontWeight:600, borderRadius:10, background:'var(--primary)', color:'#fff', border:'none', cursor:'pointer', height:44, display:'flex', alignItems:'center', justifyContent:'center', transition:'opacity 0.2s' }} disabled={!manual.name||searching} onClick={autoFill} title="Auto-fill nutrients from food database">
+              <button style={{ flexShrink:0, padding:'11px 12px', fontSize:12, fontWeight:600, borderRadius:10, background:'var(--primary)', color:'var(--primary-contrast)', border:'none', cursor:'pointer', height:44, display:'flex', alignItems:'center', justifyContent:'center', transition:'opacity 0.2s' }} disabled={!manual.name||searching} onClick={autoFill} title="Auto-fill nutrients from food database">
                 {searching?'…':'Fill'}
               </button>
             </div>
@@ -685,7 +685,7 @@ export default function LogPage() {
             </div>
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            {[{l:'Calories (kcal)',k:'cal',c:'#6366f1'},{l:'Protein (g)',k:'protein',c:'#3b82f6'},{l:'Carbs (g)',k:'carb',c:'#f59e0b'},{l:'Fat (g)',k:'fat',c:'#ef4444'},{l:'Fiber (g)',k:'fiber',c:'#10b981'}].map(f=>(
+            {[{l:'Calories (kcal)',k:'cal',c:'var(--primary)'},{l:'Protein (g)',k:'protein',c:'var(--blue)'},{l:'Carbs (g)',k:'carb',c:'var(--orange)'},{l:'Fat (g)',k:'fat',c:'var(--red)'},{l:'Fiber (g)',k:'fiber',c:'var(--green)'}].map(f=>(
               <div key={f.k}>
                 <div style={{ fontSize:12, fontWeight:700, color:f.c, marginBottom:6 }}>{f.l}</div>
                 <input type="text" inputMode="decimal" placeholder="0" value={manual[f.k]} onChange={e => setManual(p=>({...p,[f.k]:e.target.value}))}/>

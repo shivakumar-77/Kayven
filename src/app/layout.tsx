@@ -17,11 +17,9 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#6366f1',
+  themeColor: '#F7F3ED',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 }
 
@@ -39,10 +37,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `
 (function(){
   var t=localStorage.getItem('Kayven_theme')||'auto';
+  var dark=t==='dark'||(t==='auto'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);
   var d=document.documentElement;
-  if(t==='dark')d.setAttribute('data-theme','dark');
-  else if(t==='light')d.setAttribute('data-theme','light');
-  else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)d.setAttribute('data-theme','dark');
+  var resolved=dark?'dark':'light';
+  d.setAttribute('data-theme',resolved);
+  d.style.colorScheme=resolved;
 })();`}}/>
         {/* Inject public env into window for client-side libs */}
         <script dangerouslySetInnerHTML={{ __html: `

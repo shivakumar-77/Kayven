@@ -110,7 +110,7 @@ export default function CoachPage() {
         .coach-message.user { justify-content: flex-end; }
         .coach-avatar { width: 28px; height: 28px; flex: 0 0 28px; display: grid; place-items: center; border-radius: 10px; background: var(--primary-bg); }
         .coach-bubble { max-width: min(88%, 540px); border-radius: 17px 17px 17px 5px; padding: 13px 15px; background: var(--card); border: 1px solid var(--border); color: var(--text-2); font-size: 14px; line-height: 1.55; box-shadow: var(--shadow-sm); }
-        .coach-message.user .coach-bubble { border: none; border-radius: 17px 17px 5px 17px; background: var(--primary); color: #fff; }
+        .coach-message.user .coach-bubble { border: none; border-radius: 17px 17px 5px 17px; background: var(--primary); color: var(--primary-contrast); }
         .coach-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
         .coach-actions button { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; color: var(--primary); background: var(--primary-bg); border-color: transparent; }
         .coach-typing { display: flex; gap: 4px; padding: 17px 16px; }
@@ -120,7 +120,7 @@ export default function CoachPage() {
         .coach-error button { border: 0; background: none; color: inherit; font-weight: 700; cursor: pointer; }
         .coach-composer { display: flex; gap: 8px; margin-top: 18px; padding: 7px 7px 7px 15px; border: 1px solid var(--border); border-radius: 18px; background: var(--card); box-shadow: var(--shadow-md); }
         .coach-composer input { min-width: 0; flex: 1; border: 0; outline: 0; color: var(--text); background: transparent; font: inherit; font-size: 14px; }
-        .coach-composer input::placeholder { color: var(--muted); }.coach-composer button { width: 38px; height: 38px; border: 0; border-radius: 13px; display: grid; place-items: center; background: var(--primary); color: #fff; cursor: pointer; }.coach-composer button:disabled { opacity: .45; cursor: default; }
+        .coach-composer input::placeholder { color: var(--muted); }.coach-composer button { width: 38px; height: 38px; border: 0; border-radius: 13px; display: grid; place-items: center; background: var(--primary); color: var(--primary-contrast); cursor: pointer; }.coach-composer button:disabled { opacity: .45; cursor: default; }
         .coach-disclaimer { text-align: center; color: var(--muted); font-size: 10px; margin: 9px 0 0; }
         .coach-upgrade { margin-top: 4px; }
         @keyframes coachPulse { 0%, 60%, 100% { opacity: .35; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }

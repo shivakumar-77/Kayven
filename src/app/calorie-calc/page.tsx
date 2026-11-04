@@ -76,7 +76,7 @@ export default function CalorieCalcPage() {
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>I am</div>
           <div style={{ display: 'flex', gap: 12 }}>
-            {[{ id: 'male', label: 'Male', symbol: '♂', c: 'var(--primary)', bg: 'var(--primary-bg)' }, { id: 'female', label: 'Female', symbol: '♀', c: '#ec4899', bg: '#fdf2f8' }].map(g => (
+            {[{ id: 'male', label: 'Male', symbol: '♂', c: 'var(--primary)', bg: 'var(--primary-bg)' }, { id: 'female', label: 'Female', symbol: '♀', c: 'var(--taupe)', bg: 'var(--primary-bg)' }].map(g => (
               <button key={g.id} onClick={() => setGender(g.id)}
                 style={{ flex: 1, padding: '24px 20px', borderRadius: 20, border: '2px solid '+(gender===g.id?g.c:'var(--border)'), background: gender===g.id?g.bg:'var(--card)', cursor: 'pointer', textAlign: 'center' }}>
                 <div style={{ fontSize: 40, color: gender===g.id?g.c:'var(--muted)', marginBottom: 8 }}>{g.symbol}</div>
@@ -142,7 +142,7 @@ export default function CalorieCalcPage() {
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>{l.desc}</div>
                 </div>
                 {activity===l.id && <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--primary-contrast)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>}
               </button>
             ))}
@@ -161,7 +161,7 @@ export default function CalorieCalcPage() {
                   <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--primary)' }}>{result.bmr}</div>
                   <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>kcal at rest</div>
                 </div>
-                <div style={{ background: 'var(--primary-bg)', borderRadius: 14, padding: '16px', border: '1.5px solid #c7d2fe', textAlign: 'center' }}>
+                <div style={{ background: 'var(--primary-bg)', borderRadius: 14, padding: '16px', border: '1.5px solid var(--border)', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>Maintenance</div>
                   <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--primary)' }}>{result.tdee}</div>
                   <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>{result.actLabel}</div>
@@ -170,11 +170,11 @@ export default function CalorieCalcPage() {
             </div>
 
             {[
-              { icon: 'ScaleIcon', label: 'Maintain weight', desc: 'Stay at current weight', cal: result.tdee, rate: 'No change', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
-              { icon: 'SproutIcon', label: 'Lose 0.25 kg/week', desc: 'Safe and sustainable', cal: result.safe, rate: '-200 kcal', color: '#10b981', bg: '#d1fae5', border: '#6ee7b7' },
-              { icon: 'FireIcon', label: 'Lose 0.5 kg/week', desc: 'Steady fat loss (recommended)', cal: result.moderate, rate: '-500 kcal', color: '#f59e0b', bg: '#fef3c7', border: '#fde68a' },
-              { icon: 'BoltIcon', label: 'Lose 1 kg/week', desc: 'Aggressive - short periods only', cal: result.aggressive, rate: '-1000 kcal', color: '#ef4444', bg: '#fee2e2', border: '#fca5a5' },
-              { icon: 'MuscleIcon', label: 'Gain 0.25 kg/week', desc: 'Lean muscle gain', cal: result.gainLean, rate: '+250 kcal', color: '#3b82f6', bg: '#dbeafe', border: '#93c5fd' },
+              { icon: 'ScaleIcon', label: 'Maintain weight', desc: 'Stay at current weight', cal: result.tdee, rate: 'No change', color: 'var(--primary)', bg: 'var(--primary-bg)', border: 'var(--border)' },
+              { icon: 'SproutIcon', label: 'Lose 0.25 kg/week', desc: 'Safe and sustainable', cal: result.safe, rate: '-200 kcal', color: 'var(--green)', bg: 'var(--green-bg)', border: 'var(--green)' },
+              { icon: 'FireIcon', label: 'Lose 0.5 kg/week', desc: 'Steady fat loss (recommended)', cal: result.moderate, rate: '-500 kcal', color: 'var(--orange)', bg: 'var(--orange-bg)', border: 'var(--border)' },
+              { icon: 'BoltIcon', label: 'Lose 1 kg/week', desc: 'Aggressive - short periods only', cal: result.aggressive, rate: '-1000 kcal', color: 'var(--red)', bg: 'var(--red-bg)', border: 'color-mix(in srgb, var(--red) 40%, var(--border))' },
+              { icon: 'MuscleIcon', label: 'Gain 0.25 kg/week', desc: 'Lean muscle gain', cal: result.gainLean, rate: '+250 kcal', color: 'var(--blue)', bg: 'var(--blue-bg)', border: 'var(--blue)' },
             ].map(g => (
               <div key={g.label} style={{ background: g.bg, borderRadius: 20, padding: '18px', border: '1.5px solid '+g.border, marginBottom: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -189,7 +189,7 @@ export default function CalorieCalcPage() {
                 </div>
                 <div style={{ fontSize: 36, fontWeight: 900, color: g.color, marginBottom: 12 }}>{g.cal} <span style={{ fontSize: 14, color: 'var(--muted)', fontWeight: 400 }}>kcal/day</span></div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {[{ l: 'Protein', v: result.prot, c: '#3b82f6' }, { l: 'Carbs', v: result.carb, c: '#f59e0b' }, { l: 'Fat', v: result.fat, c: '#ef4444' }].map(m => (
+                  {[{ l: 'Protein', v: result.prot, c: 'var(--blue)' }, { l: 'Carbs', v: result.carb, c: 'var(--orange)' }, { l: 'Fat', v: result.fat, c: 'var(--red)' }].map(m => (
                     <div key={m.l} style={{ flex: 1, background: 'rgba(255,255,255,0.6)', borderRadius: 10, padding: '8px', textAlign: 'center' }}>
                       <div style={{ fontSize: 9, fontWeight: 700, color: m.c, textTransform: 'uppercase', marginBottom: 3 }}>{m.l}</div>
                       <div style={{ fontSize: 15, fontWeight: 800 }}>{m.v}g</div>
@@ -199,8 +199,8 @@ export default function CalorieCalcPage() {
               </div>
             ))}
 
-            <div style={{ background: '#f0fdf4', borderRadius: 16, padding: '14px 16px', border: '1.5px solid #bbf7d0', marginBottom: 24 }}>
-              <p style={{ fontSize: 12, color: '#15803d', lineHeight: 1.6 }}>Uses the Mifflin-St Jeor equation - the most accurate formula for estimating daily calorie needs.</p>
+            <div style={{ background: 'var(--green-bg)', borderRadius: 16, padding: '14px 16px', border: '1.5px solid var(--border)', marginBottom: 24 }}>
+              <p style={{ fontSize: 12, color: 'var(--green)', lineHeight: 1.6 }}>Uses the Mifflin-St Jeor equation - the most accurate formula for estimating daily calorie needs.</p>
             </div>
           </div>
         )}

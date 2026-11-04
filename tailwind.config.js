@@ -1,6 +1,40 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
-  theme: { extend: {} },
+  theme: {
+    extend: {
+      colors: {
+        espresso: 'var(--espresso)',
+        cocoa: 'var(--cocoa)',
+        caramel: 'var(--caramel)',
+        taupe: 'var(--taupe)',
+        beige: 'var(--beige)',
+        charcoal: 'var(--charcoal)',
+        primary: 'var(--primary)',
+        'primary-light': 'var(--primary-light)',
+        'primary-dark': 'var(--primary-dark)',
+        'primary-contrast': 'var(--primary-contrast)',
+        'primary-bg': 'var(--primary-bg)',
+        surface: 'var(--surface)',
+        card: 'var(--card)',
+        card2: 'var(--card2)',
+        text: 'var(--text)',
+        muted: 'var(--muted)',
+        border: 'var(--border)',
+        protein: 'var(--protein)',
+        carbs: 'var(--carbs)',
+        fat: 'var(--fat)',
+        water: 'var(--water)',
+        green: 'var(--green)',
+        'green-bg': 'var(--green-bg)',
+        red: 'var(--red)',
+        'red-bg': 'var(--red-bg)',
+        orange: 'var(--orange)',
+        'orange-bg': 'var(--orange-bg)',
+        blue: 'var(--blue)',
+        'blue-bg': 'var(--blue-bg)',
+      },
+    },
+  },
   plugins: []
 }

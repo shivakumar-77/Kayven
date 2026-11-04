@@ -221,11 +221,11 @@ export default function ProfilePage() {
   const MenuItem = ({icon, label, sub, onClick, danger=false}) => (
     <button onClick={onClick} className="tap-scale"
       style={{width:'100%',display:'flex',alignItems:'center',gap:14,padding:'15px 16px',background:'var(--card)',borderRadius:16,border:'1px solid var(--border)',cursor:'pointer',textAlign:'left',marginBottom:8,WebkitTapHighlightColor:'transparent'}}>
-      <div style={{width:42,height:42,borderRadius:13,background:danger?'#fef2f2':'var(--card2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>
+      <div style={{width:42,height:42,borderRadius:13,background:danger?'var(--red-bg)':'var(--card2)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>
         {icon}
       </div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontWeight:600,fontSize:14,color:danger?'#dc2626':'var(--text)'}}>{label}</div>
+        <div style={{fontWeight:600,fontSize:14,color:danger?'var(--red)':'var(--text)'}}>{label}</div>
         {sub && <div style={{fontSize:12,color:'var(--muted)',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{sub}</div>}
       </div>
       <IconChevron/>
@@ -241,7 +241,7 @@ export default function ProfilePage() {
   )
 
   const MsgBanner = () => msg ? (
-    <div style={{position:'fixed',top:'calc(env(safe-area-inset-top,0px) + 16px)',left:'50%',transform:'translateX(-50%)',zIndex:3000,background:'#1e293b',color:'#fff',borderRadius:99,padding:'10px 20px',fontSize:13,fontWeight:600,boxShadow:'0 4px 20px rgba(0,0,0,0.3)',whiteSpace:'nowrap'}}>✓ {msg}</div>
+    <div style={{position:'fixed',top:'calc(env(safe-area-inset-top,0px) + 16px)',left:'50%',transform:'translateX(-50%)',zIndex:3000,background:'var(--text)',color:'var(--surface)',borderRadius:99,padding:'10px 20px',fontSize:13,fontWeight:600,boxShadow:'var(--shadow-lg)',whiteSpace:'nowrap'}}>✓ {msg}</div>
   ) : null
 
   // ── Apple HIG grouped-list helpers ──────────────────────────
@@ -256,9 +256,9 @@ export default function ProfilePage() {
   const AppleRow = ({ icon, iconBg, label, sub, onClick, last, danger }) => (
     <button onClick={onClick} className="tap-scale"
       style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'13px 16px', background:'none', border:'none', borderBottom: last?'none':'1px solid var(--border)', cursor:'pointer', textAlign:'left' }}>
-      <div style={{ width:32, height:32, borderRadius:9, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'#fff' }}>{icon}</div>
+      <div style={{ width:32, height:32, borderRadius:9, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--colored-label)' }}>{icon}</div>
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontWeight:500, fontSize:15, color: danger?'#ef4444':'var(--text)' }}>{label}</div>
+        <div style={{ fontWeight:500, fontSize:15, color: danger?'var(--red)':'var(--text)' }}>{label}</div>
         {sub && <div style={{ fontSize:12, color:'var(--muted)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sub}</div>}
       </div>
       {!danger && <IconChevron/>}
@@ -274,9 +274,9 @@ export default function ProfilePage() {
         {itemRipples.map(rp => (
           <span key={rp.id} style={{ position:'absolute', left:rp.x, top:rp.y, width:10, height:10, marginLeft:-5, marginTop:-5, borderRadius:'50%', background:'var(--primary)', opacity:0.25, animation:'mdRipple 0.5s ease-out forwards', pointerEvents:'none' }}/>
         ))}
-        <div style={{ width:44, height:44, borderRadius:14, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'#fff' }}>{icon}</div>
+        <div style={{ width:44, height:44, borderRadius:14, background:iconBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, color:'var(--colored-label)' }}>{icon}</div>
         <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontWeight:600, fontSize:15, color: danger?'#ef4444':'var(--text)' }}>{label}</div>
+          <div style={{ fontWeight:600, fontSize:15, color: danger?'var(--red)':'var(--text)' }}>{label}</div>
           {sub && <div style={{ fontSize:12, color:'var(--muted)', marginTop:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sub}</div>}
         </div>
         {!danger && <IconChevron/>}
@@ -287,15 +287,15 @@ export default function ProfilePage() {
   // The 10 requested cards + 2 preserved real features (Progress&Achievements has no home in
   // the requested list, and Subscription/Support/About are new — see notes in chat).
   const ACCOUNT_ITEMS = [
-    { id:'profile', icon:<IconPerson size={18} color="#fff"/>, iconBg:'var(--primary)', label:'Profile', sub:`${profilePct}% complete`, action:()=>setView('edit') },
-    { id:'goals', icon:<TargetIcon size={18} color="#fff"/>, iconBg:'#10b981', label:'Goals', sub:'Calories, macros, weight goal', action:()=>setView('goals') },
-    { id:'progress', icon:<TrophyIcon size={18} color="#fff"/>, iconBg:'#f59e0b', label:'Progress & Achievements', sub:'Streaks, badges, challenges', action:()=>router.push('/progress') },
-    { id:'subscription', icon:<IconCrown size={18} color="#fff"/>, iconBg:'#8b5cf6', label:'Subscription', sub:'View your plan and AI Coach usage', action:()=>router.push('/subscription/manage') },
-    { id:'privacy', icon:<LockIcon size={18} color="#fff"/>, iconBg:'#3b82f6', label:'Privacy', sub:'How your data is handled', action:()=>{ setLegalPage('privacy'); setView('legal') } },
-    { id:'notifications', icon:<BellIcon size={18} color="#fff"/>, iconBg:'#f97316', label:'Notifications', sub: notifPermission==='granted' ? `${reminders.filter(r=>r.enabled).length} reminders active` : 'Set meal reminders', action:()=>setView('notifications') },
-    { id:'dataExport', icon:<IconDownloadTray size={18} color="#fff"/>, iconBg:'#0ea5e9', label:'Data Export', sub:'Request a copy of your data', action:()=>{ setLegalPage('data'); setView('legal') } },
-    { id:'support', icon:<IconLifeBuoy size={18} color="#fff"/>, iconBg:'#ec4899', label:'Support', sub:'support@Kayven.app', action:()=>{ window.location.href = 'mailto:support@Kayven.app' } },
-    { id:'about', icon:<IconInfo size={18} color="#fff"/>, iconBg:'#64748b', label:'About', sub:'Kayven', action:()=>setView('about') },
+    { id:'profile', icon:<IconPerson size={18} color="var(--colored-label)"/>, iconBg:'var(--primary)', label:'Profile', sub:`${profilePct}% complete`, action:()=>setView('edit') },
+    { id:'goals', icon:<TargetIcon size={18} color="var(--colored-label)"/>, iconBg:'var(--green)', label:'Goals', sub:'Calories, macros, weight goal', action:()=>setView('goals') },
+    { id:'progress', icon:<TrophyIcon size={18} color="var(--colored-label)"/>, iconBg:'var(--orange)', label:'Progress & Achievements', sub:'Streaks, badges, challenges', action:()=>router.push('/progress') },
+    { id:'subscription', icon:<IconCrown size={18} color="var(--colored-label)"/>, iconBg:'var(--primary-light)', label:'Subscription', sub:'View your plan and AI Coach usage', action:()=>router.push('/subscription/manage') },
+    { id:'privacy', icon:<LockIcon size={18} color="var(--colored-label)"/>, iconBg:'var(--blue)', label:'Privacy', sub:'How your data is handled', action:()=>{ setLegalPage('privacy'); setView('legal') } },
+    { id:'notifications', icon:<BellIcon size={18} color="var(--colored-label)"/>, iconBg:'var(--orange)', label:'Notifications', sub: notifPermission==='granted' ? `${reminders.filter(r=>r.enabled).length} reminders active` : 'Set meal reminders', action:()=>setView('notifications') },
+    { id:'dataExport', icon:<IconDownloadTray size={18} color="var(--colored-label)"/>, iconBg:'var(--blue)', label:'Data Export', sub:'Request a copy of your data', action:()=>{ setLegalPage('data'); setView('legal') } },
+    { id:'support', icon:<IconLifeBuoy size={18} color="var(--colored-label)"/>, iconBg:'var(--primary)', label:'Support', sub:'support@Kayven.app', action:()=>{ window.location.href = 'mailto:support@Kayven.app' } },
+    { id:'about', icon:<IconInfo size={18} color="var(--colored-label)"/>, iconBg:'var(--charcoal)', label:'About', sub:'Kayven', action:()=>setView('about') },
   ]
 
   // ── LEGAL ──────────────────────────────────────────────────
@@ -377,7 +377,7 @@ export default function ProfilePage() {
         </div>
         <div style={{padding:'0 20px 40px'}}>
           <div style={{fontSize:12,color:'var(--muted)',marginBottom:20}}>Last updated: {page.updated}</div>
-          <div style={{background:'var(--primary-bg)',borderRadius:16,padding:'14px 16px',border:'1px solid #c7d2fe',marginBottom:20}}>
+          <div style={{background:'var(--primary-bg)',borderRadius:16,padding:'14px 16px',border:'1px solid var(--border)',marginBottom:20}}>
             <p style={{fontSize:13,color:'var(--primary)',lineHeight:1.7}}>{page.intro}</p>
           </div>
           {page.sections.map((s,i) => (
@@ -405,10 +405,10 @@ export default function ProfilePage() {
           <div style={{ fontSize:13, color:'var(--muted)', marginTop:4 }}>Nutrition & fitness tracking</div>
         </div>
         <AppleGroup>
-          <AppleRow icon={<IconLifeBuoy size={16} color="#fff"/>} iconBg="#ec4899" label="Contact support" sub="support@Kayven.app" onClick={()=>{ window.location.href = 'mailto:support@Kayven.app' }}/>
-          <AppleRow icon={<IconPerson size={16} color="#fff"/>} iconBg="var(--primary)" label="Terms & Conditions" onClick={()=>{ setLegalPage('terms'); setView('legal') }}/>
-          <AppleRow icon={<LockIcon size={16} color="#fff"/>} iconBg="#3b82f6" label="Privacy Policy" onClick={()=>{ setLegalPage('privacy'); setView('legal') }}/>
-          <AppleRow icon={<IconDownloadTray size={16} color="#fff"/>} iconBg="#0ea5e9" label="Data & Privacy Controls" last onClick={()=>{ setLegalPage('data'); setView('legal') }}/>
+          <AppleRow icon={<IconLifeBuoy size={16} color="var(--colored-label)"/>} iconBg="var(--primary)" label="Contact support" sub="support@Kayven.app" onClick={()=>{ window.location.href = 'mailto:support@Kayven.app' }}/>
+          <AppleRow icon={<IconPerson size={16} color="var(--colored-label)"/>} iconBg="var(--primary)" label="Terms & Conditions" onClick={()=>{ setLegalPage('terms'); setView('legal') }}/>
+          <AppleRow icon={<LockIcon size={16} color="var(--colored-label)"/>} iconBg="var(--blue)" label="Privacy Policy" onClick={()=>{ setLegalPage('privacy'); setView('legal') }}/>
+          <AppleRow icon={<IconDownloadTray size={16} color="var(--colored-label)"/>} iconBg="var(--blue)" label="Data & Privacy Controls" last onClick={()=>{ setLegalPage('data'); setView('legal') }}/>
         </AppleGroup>
         <div style={{ textAlign:'center', fontSize:11, color:'var(--muted)', marginTop:8 }}>© {new Date().getFullYear()} Kayven</div>
       </div>
@@ -431,14 +431,14 @@ export default function ProfilePage() {
             <L text="Profile photo"/>
             <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={handlePhoto}/>
             <div style={{display:'flex',alignItems:'center',gap:14}}>
-              <div style={{width:60,height:60,borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,var(--primary),#818cf8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,fontWeight:800,color:'#fff',flexShrink:0}}>
+              <div style={{width:60,height:60,borderRadius:'50%',overflow:'hidden',background:'linear-gradient(135deg,var(--primary),var(--primary-light))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,fontWeight:800,color:'var(--primary-contrast)',flexShrink:0}}>
                 {photoUrl ? <img src={photoUrl} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : (form.name?form.name[0].toUpperCase():'?')}
               </div>
               <div style={{flex:1}}>
                 <button onClick={()=>fileRef.current?.click()} className="btn btn-ghost tap-scale" style={{fontSize:13,padding:'9px 14px',fontWeight:600,width:'auto'}}>
                   {photoUrl?'Change photo':'Upload photo'}
                 </button>
-                {photoUrl && <button onClick={()=>setPhotoUrl(null)} style={{background:'none',border:'none',color:'#ef4444',fontSize:12,cursor:'pointer',marginLeft:10}}>Remove</button>}
+                {photoUrl && <button onClick={()=>setPhotoUrl(null)} style={{background:'none',border:'none',color:'var(--red)',fontSize:12,cursor:'pointer',marginLeft:10}}>Remove</button>}
                 <div style={{fontSize:11,color:'var(--muted)',marginTop:4}}>JPG or PNG, max 5MB</div>
               </div>
             </div>
@@ -511,12 +511,12 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        <div className="card fade-in-up" style={{border:'1px solid #fecaca'}}>
-          <div style={{fontWeight:700,fontSize:15,marginBottom:8,color:'#dc2626'}}>Danger zone</div>
+        <div className="card fade-in-up" style={{border:'1px solid var(--red)'}}>
+          <div style={{fontWeight:700,fontSize:15,marginBottom:8,color:'var(--red)'}}>Danger zone</div>
           <p style={{fontSize:13,color:'var(--muted)',marginBottom:16,lineHeight:1.7}}>
             Permanently delete your Kayven account and all associated data. This action <strong>cannot be undone</strong>. All food logs, weight history, and profile data will be permanently removed.
           </p>
-          <button className="tap-scale" style={{width:'100%',padding:'14px',borderRadius:14,background:'#fef2f2',border:'1px solid #fecaca',color:'#dc2626',fontWeight:700,fontSize:14,cursor:'pointer',WebkitTapHighlightColor:'transparent'}}
+          <button className="tap-scale" style={{width:'100%',padding:'14px',borderRadius:14,background:'var(--red-bg)',border:'1px solid var(--border)',color:'var(--red)',fontWeight:700,fontSize:14,cursor:'pointer',WebkitTapHighlightColor:'transparent'}}
             onClick={async()=>{if(confirm('This will permanently delete your account and all data. Are you sure?')){await supabase.auth.signOut();router.replace('/auth')}}}>
             Delete my account permanently
           </button>
@@ -541,9 +541,9 @@ export default function ProfilePage() {
             <L text="My main goal"/>
             <div style={{display:'flex',gap:8}}>
               {[
-                { key:'lose', label:'Lose fat', icon:<ChartDownIcon size={24} color='#10b981'/>, color:'#10b981', bg:'#d1fae5' },
-                { key:'maintain', label:'Maintain', icon:<ScaleIcon size={24} color='#f59e0b'/>, color:'#f59e0b', bg:'#fef3c7' },
-                { key:'gain', label:'Build muscle', icon:<MuscleIcon size={24} color='#3b82f6'/>, color:'#3b82f6', bg:'#dbeafe' }
+                { key:'lose', label:'Lose fat', icon:<ChartDownIcon size={24} color='var(--green)'/>, color:'var(--green)', bg:'var(--green-bg)' },
+                { key:'maintain', label:'Maintain', icon:<ScaleIcon size={24} color='var(--orange)'/>, color:'var(--orange)', bg:'var(--orange-bg)' },
+                { key:'gain', label:'Build muscle', icon:<MuscleIcon size={24} color='var(--primary)'/>, color:'var(--primary)', bg:'var(--primary-bg)' }
               ].map(g=>(
                 <button key={g.key} onClick={()=>setForm(p=>({...p,goal:g.key}))} className="tap-scale"
                   style={{flex:1,padding:'14px 6px',borderRadius:16,border:'2px solid '+(form.goal===g.key?g.color:'var(--border)'),background:form.goal===g.key?g.bg:'var(--card)',cursor:'pointer',textAlign:'center',WebkitTapHighlightColor:'transparent'}}>
@@ -566,7 +566,7 @@ export default function ProfilePage() {
               <div key={f.k}><L text={f.l}/><input type="text" inputMode={f.m} value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))}/></div>
             ))}
           </div>
-          <div style={{background:'var(--primary-bg)',borderRadius:12,padding:'12px 14px',border:'1px solid #c7d2fe',fontSize:12,color:'var(--primary)',lineHeight:1.6}}>
+          <div style={{background:'var(--primary-bg)',borderRadius:12,padding:'12px 14px',border:'1px solid var(--border)',fontSize:12,color:'var(--primary)',lineHeight:1.6}}>
             Not sure about your targets? Use the <strong>Calorie Calculator</strong> in Tools to get exact numbers based on your body and activity level.
           </div>
           <button className="btn btn-primary tap-scale" style={{padding:'15px',fontWeight:700,fontSize:15}} onClick={saveProfile} disabled={saving}>
@@ -577,12 +577,12 @@ export default function ProfilePage() {
         <div className="card fade-in-up">
           <div style={{fontWeight:700,fontSize:15,marginBottom:14}}>Current plan</div>
           {[
-            {l:'Calories',v:form.cal_target,u:'kcal',c:'#6366f1'},
-            {l:'Protein',v:form.protein_target,u:'g',c:'#3b82f6'},
-            {l:'Carbohydrates',v:form.carb_target,u:'g',c:'#f59e0b'},
-            {l:'Fat',v:form.fat_target,u:'g',c:'#ef4444'},
-            {l:'Fiber',v:form.fiber_target,u:'g',c:'#10b981'},
-            {l:'Water',v:form.water_goal,u:'ml',c:'#0ea5e9'},
+            {l:'Calories',v:form.cal_target,u:'kcal',c:'var(--primary)'},
+            {l:'Protein',v:form.protein_target,u:'g',c:'var(--protein)'},
+            {l:'Carbohydrates',v:form.carb_target,u:'g',c:'var(--carbs)'},
+            {l:'Fat',v:form.fat_target,u:'g',c:'var(--fat)'},
+            {l:'Fiber',v:form.fiber_target,u:'g',c:'var(--green)'},
+            {l:'Water',v:form.water_goal,u:'ml',c:'var(--water)'},
           ].map((m,i,arr)=>(
             <div key={m.l} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'11px 0',borderBottom:i<arr.length-1?'1px solid var(--border)':'none'}}>
               <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -609,7 +609,7 @@ export default function ProfilePage() {
         <MsgBanner/>
         <div className="card fade-in-up" style={{marginBottom:14}}>
           <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:16}}>
-            <div style={{width:48,height:48,borderRadius:16,background:notifPermission==='granted'?'#d1fae5':'#fef3c7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>
+            <div style={{width:48,height:48,borderRadius:16,background:notifPermission==='granted'?'var(--green-bg)':'var(--orange-bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,flexShrink:0}}>
               {notifPermission==='granted' ? <CheckIcon size={24} color='var(--primary)'/> : <BellIcon size={24} color='var(--primary)'/>}
             </div>
             <div>
@@ -645,7 +645,7 @@ export default function ProfilePage() {
               </div>
               <button onClick={()=>setReminders(p=>p.map(x=>x.id===r.id?{...x,enabled:!x.enabled}:x))} className="tap-scale"
                 style={{width:48,height:28,borderRadius:99,background:r.enabled?'var(--primary)':'var(--border)',border:'none',cursor:'pointer',position:'relative',transition:'background 0.2s',flexShrink:0,WebkitTapHighlightColor:'transparent'}}>
-                <div style={{position:'absolute',top:4,left:r.enabled?26:4,width:20,height:20,borderRadius:'50%',background:'#fff',transition:'left 0.2s',boxShadow:'0 1px 3px rgba(0,0,0,0.2)'}}/>
+                <div style={{position:'absolute',top:4,left:r.enabled?26:4,width:20,height:20,borderRadius:'50%',background:'var(--primary-contrast)',transition:'left 0.2s',boxShadow:'var(--shadow-sm)'}}/>
               </button>
             </div>
           ))}
@@ -653,7 +653,7 @@ export default function ProfilePage() {
         <button className="btn btn-primary tap-scale" style={{padding:'15px',fontWeight:700,fontSize:15}} onClick={saveReminders}>
           Save reminders
         </button>
-        <div style={{background:'#fef3c7',borderRadius:14,padding:'12px 14px',border:'1px solid #fde68a',marginTop:14,fontSize:12,color:'#92400e',lineHeight:1.7}}>
+        <div style={{background:'var(--orange-bg)',borderRadius:14,padding:'12px 14px',border:'1px solid var(--border)',marginTop:14,fontSize:12,color:'var(--orange)',lineHeight:1.7}}>
           Reminders work while the app is open or installed as a PWA on your home screen. For best results, keep the app running in the background.
         </div>
       </div>
@@ -663,7 +663,7 @@ export default function ProfilePage() {
 
   // ── MAIN ───────────────────────────────────────────────────
   return (
-    <div style={{ background:'#f2f2f7', minHeight:'100dvh', maxWidth:430, margin:'0 auto', paddingTop:'calc(var(--sat) + 24px)', paddingBottom:'calc(var(--sab) + 120px)' }}>
+    <div style={{ background:'var(--surface)', minHeight:'100dvh', maxWidth:430, margin:'0 auto', paddingTop:'calc(var(--sat) + 24px)', paddingBottom:'calc(var(--sab) + 120px)' }}>
       {sharedStyles}
       <MsgBanner/>
 
@@ -671,7 +671,7 @@ export default function ProfilePage() {
         <div style={{ width:'100%', maxWidth:360 }}>
           <div className="fade-in-up" style={{ textAlign:'center', marginBottom:28 }}>
             <button onClick={()=>setView('edit')} className="tap-scale" style={{ position:'relative', width:108, height:108, margin:'0 auto 14px', cursor:'pointer', border:'none', background:'none', padding:0 }}>
-              <div style={{ width:108, height:108, borderRadius:'50%', overflow:'hidden', background:'linear-gradient(135deg,var(--primary),#818cf8)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:40, fontWeight:800, color:'#fff' }}>
+              <div style={{ width:108, height:108, borderRadius:'50%', overflow:'hidden', background:'linear-gradient(135deg,var(--primary),var(--primary-light))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:40, fontWeight:800, color:'var(--primary-contrast)' }}>
                 {photoUrl ? <img src={photoUrl} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : (form.name ? form.name[0].toUpperCase() : '?')}
               </div>
               <svg style={{ position:'absolute', top:-4, left:-4 }} width="116" height="116" viewBox="0 0 116 116">
@@ -704,9 +704,9 @@ export default function ProfilePage() {
 
           <div style={{ marginBottom:18 }}>
             <div className="section-label" style={{ marginLeft:10, letterSpacing:'0.12em' }}>Privacy &amp; Data</div>
-            <div style={{ background:'rgba(255,255,255,0.85)', border:'1px solid rgba(0,0,0,0.04)', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 0 rgba(0,0,0,0.02)' }}>
+            <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden', boxShadow:'var(--shadow-sm)' }}>
               <button onClick={ACCOUNT_ITEMS[4].action} className="tap-scale" style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'15px 16px', background:'transparent', border:'none', borderBottom:'1px solid var(--border)', cursor:'pointer', textAlign:'left' }}>
-                <div style={{ width:32, height:32, borderRadius:10, background:'#3b82f6', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink:0 }}><LockIcon size={18} color="#fff"/></div>
+                <div style={{ width:32, height:32, borderRadius:10, background:'var(--blue)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--colored-label)', flexShrink:0 }}><LockIcon size={18} color="var(--colored-label)"/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', lineHeight:1.2 }}>Privacy</div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>How your data is handled</div>
@@ -715,7 +715,7 @@ export default function ProfilePage() {
               </button>
 
               <button onClick={ACCOUNT_ITEMS[6].action} className="tap-scale" style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'15px 16px', background:'transparent', border:'none', cursor:'pointer', textAlign:'left' }}>
-                <div style={{ width:32, height:32, borderRadius:10, background:'#0ea5e9', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink:0 }}><IconDownloadTray size={18} color="#fff"/></div>
+                <div style={{ width:32, height:32, borderRadius:10, background:'var(--blue)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--colored-label)', flexShrink:0 }}><IconDownloadTray size={18} color="var(--colored-label)"/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', lineHeight:1.2 }}>Data Export</div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>Request a copy of your data</div>
@@ -727,9 +727,9 @@ export default function ProfilePage() {
 
           <div style={{ marginBottom:18 }}>
             <div className="section-label" style={{ marginLeft:10, letterSpacing:'0.12em' }}>Preferences</div>
-            <div style={{ background:'rgba(255,255,255,0.85)', border:'1px solid rgba(0,0,0,0.04)', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 0 rgba(0,0,0,0.02)' }}>
+            <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden', boxShadow:'var(--shadow-sm)' }}>
               <button onClick={ACCOUNT_ITEMS[5].action} className="tap-scale" style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'15px 16px', background:'transparent', border:'none', cursor:'pointer', textAlign:'left' }}>
-                <div style={{ width:32, height:32, borderRadius:10, background:'#f97316', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink:0 }}><BellIcon size={18} color="#fff"/></div>
+                <div style={{ width:32, height:32, borderRadius:10, background:'var(--orange)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--colored-label)', flexShrink:0 }}><BellIcon size={18} color="var(--colored-label)"/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', lineHeight:1.2 }}>Notifications</div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>Set meal reminders</div>
@@ -741,9 +741,9 @@ export default function ProfilePage() {
 
           <div style={{ marginBottom:18 }}>
             <div className="section-label" style={{ marginLeft:10, letterSpacing:'0.12em' }}>Support</div>
-            <div style={{ background:'rgba(255,255,255,0.85)', border:'1px solid rgba(0,0,0,0.04)', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 0 rgba(0,0,0,0.02)' }}>
+            <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, overflow:'hidden', boxShadow:'var(--shadow-sm)' }}>
               <button onClick={ACCOUNT_ITEMS[7].action} className="tap-scale" style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'15px 16px', background:'transparent', border:'none', borderBottom:'1px solid var(--border)', cursor:'pointer', textAlign:'left' }}>
-                <div style={{ width:32, height:32, borderRadius:10, background:'#ec4899', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink:0 }}><IconLifeBuoy size={18} color="#fff"/></div>
+                <div style={{ width:32, height:32, borderRadius:10, background:'var(--primary)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--primary-contrast)', flexShrink:0 }}><IconLifeBuoy size={18} color="var(--primary-contrast)"/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', lineHeight:1.2 }}>Support</div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>support@Kayven.app</div>
@@ -752,7 +752,7 @@ export default function ProfilePage() {
               </button>
 
               <button onClick={ACCOUNT_ITEMS[8].action} className="tap-scale" style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'15px 16px', background:'transparent', border:'none', cursor:'pointer', textAlign:'left' }}>
-                <div style={{ width:32, height:32, borderRadius:10, background:'#64748b', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink:0 }}><IconInfo size={18} color="#fff"/></div>
+                <div style={{ width:32, height:32, borderRadius:10, background:'var(--charcoal)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--primary-contrast)', flexShrink:0 }}><IconInfo size={18} color="var(--primary-contrast)"/></div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', lineHeight:1.2 }}>About</div>
                   <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>Kayven</div>
@@ -764,13 +764,13 @@ export default function ProfilePage() {
 
           <div style={{ marginBottom:24 }}>
             <div className="section-label" style={{ marginLeft:10, letterSpacing:'0.12em' }}>Appearance</div>
-            <div style={{ background:'rgba(255,255,255,0.85)', border:'1px solid rgba(0,0,0,0.04)', borderRadius:16, padding:8, display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:10, boxShadow:'0 1px 0 rgba(0,0,0,0.02)' }}>
+            <div style={{ background:'var(--card)', border:'1px solid var(--border)', borderRadius:16, padding:8, display:'grid', gridTemplateColumns:'repeat(3, minmax(0,1fr))', gap:10, boxShadow:'var(--shadow-sm)' }}>
               {[
                 { value:'light', icon:<SunIcon size={22} color={theme==='light' ? 'var(--primary)' : 'var(--muted)'}/>, label:'Light' },
                 { value:'auto', icon:<AutoIcon size={22} color={theme==='auto' ? 'var(--primary)' : 'var(--muted)'}/>, label:'Auto' },
                 { value:'dark', icon:<MoonIcon size={22} color={theme==='dark' ? 'var(--primary)' : 'var(--muted)'}/>, label:'Dark' }
               ].map(({ value, icon, label }) => (
-                <button key={value} onClick={() => setTheme(value)} className="tap-scale" style={{ border:'1px solid '+(theme===value ? 'var(--primary)' : 'var(--border)'), background:theme===value ? 'var(--primary-bg)' : 'rgba(255,255,255,0.45)', borderRadius:12, padding:'12px 8px 10px', cursor:'pointer', textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, color:theme===value ? 'var(--primary)' : 'var(--muted)', fontWeight:700, fontSize:12 }}>
+                <button key={value} onClick={() => setTheme(value)} className="tap-scale" style={{ border:'1px solid '+(theme===value ? 'var(--primary)' : 'var(--border)'), background:theme===value ? 'var(--primary-bg)' : 'var(--surface)', borderRadius:12, padding:'12px 8px 10px', cursor:'pointer', textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, color:theme===value ? 'var(--primary)' : 'var(--muted)', fontWeight:700, fontSize:12 }}>
                   {icon}
                   <span>{label}</span>
                 </button>
@@ -778,8 +778,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <button onClick={async()=>{await supabase.auth.signOut();router.replace('/auth')}} className="tap-scale" style={{ width:'100%', padding:'14px 16px', borderRadius:14, background:'#fef2f2', border:'1px solid #fecaca', color:'#dc2626', fontWeight:700, fontSize:15, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-            <LogoutIcon size={18} color="#dc2626"/>
+          <button onClick={async()=>{await supabase.auth.signOut();router.replace('/auth')}} className="tap-scale" style={{ width:'100%', padding:'14px 16px', borderRadius:14, background:'var(--red-bg)', border:'1px solid var(--border)', color:'var(--red)', fontWeight:700, fontSize:15, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+            <LogoutIcon size={18} color="var(--red)"/>
             Log out
           </button>
         </div>

@@ -76,7 +76,7 @@ export default function WorkoutHistoryPage() {
         <div style={{ display: 'flex', background: 'var(--card2)', borderRadius: 14, padding: 3, marginBottom: 16, border: '0.5px solid var(--border)' }}>
           {[['history','📊 History'],['prs','🏆 PRs']].map(([id,label]) => (
             <button key={id} onClick={() => setTab(id as any)}
-              style={{ flex: 1, padding: '9px', borderRadius: 11, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === id ? 'var(--primary)' : 'transparent', color: tab === id ? '#fff' : 'var(--muted)' }}>
+              style={{ flex: 1, padding: '9px', borderRadius: 11, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === id ? 'var(--primary)' : 'transparent', color: tab === id ? 'var(--primary-contrast)' : 'var(--muted)' }}>
               {label}
             </button>
           ))}
@@ -146,7 +146,7 @@ export default function WorkoutHistoryPage() {
                           })}
                         </div>
                         <button onClick={() => deleteLog(log.id)}
-                          style={{ background: '#fef2f2', border: 'none', borderRadius: 10, padding: '8px 14px', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                          style={{ background: 'var(--red-bg)', border: 'none', borderRadius: 10, padding: '8px 14px', color: 'var(--red)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                           Delete workout
                         </button>
                       </div>
@@ -176,7 +176,7 @@ export default function WorkoutHistoryPage() {
               </div>
             ) : (
               <div>
-                <div style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', borderRadius: 20, padding: '16px 20px', marginBottom: 16, color: '#fff' }}>
+                <div style={{ background: 'linear-gradient(135deg,var(--orange),var(--orange))', borderRadius: 20, padding: '16px 20px', marginBottom: 16, color: 'var(--primary-contrast)' }}>
                   <div style={{ fontSize: 12, opacity: 0.85, fontWeight: 600, marginBottom: 4 }}>Total PRs achieved</div>
                   <div style={{ fontSize: 36, fontWeight: 800 }}>{prs.length}</div>
                 </div>
@@ -184,7 +184,7 @@ export default function WorkoutHistoryPage() {
                   <div key={pr.id} className="card" style={{ marginBottom: 10, padding: '14px 16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{pr.exercise_name}</div>
-                      <div style={{ padding: '3px 10px', background: '#fef3c7', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#d97706' }}>🏆 PR</div>
+                      <div style={{ padding: '3px 10px', background: 'var(--orange-bg)', borderRadius: 99, fontSize: 11, fontWeight: 700, color: 'var(--orange)' }}>🏆 PR</div>
                     </div>
                     <div style={{ display: 'flex', gap: 16 }}>
                       <div>
@@ -193,7 +193,7 @@ export default function WorkoutHistoryPage() {
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Est. 1RM</div>
-                        <div style={{ fontWeight: 700, fontSize: 16, color: '#10b981' }}>{pr.one_rm_estimate}kg</div>
+                        <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--green)' }}>{pr.one_rm_estimate}kg</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 2 }}>Achieved</div>

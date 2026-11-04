@@ -130,7 +130,7 @@ function ExercisesContent() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <button onClick={()=>router.push('/profile')} style={{background:'none',border:'none',cursor:'pointer',padding:0}}>
-              <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--primary),#818cf8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'#fff'}}>?</div>
+              <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--primary),var(--primary-light))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:800,color:'var(--primary-contrast)'}}>?</div>
             </button>
           </div>
         </div>
@@ -146,11 +146,11 @@ function ExercisesContent() {
         {/* Filter pills — exactly like your design */}
         <div style={{display:'flex',gap:8,position:'relative'}}>
           <button ref={bodyButtonRef} onClick={handleBodyPartOpen}
-            style={{flex:1,padding:'8px 12px',borderRadius:10,border:'1.5px solid var(--border)',background:bodyPart!=='Any body part'?'var(--primary)':'var(--card2)',color:bodyPart!=='Any body part'?'#fff':'var(--text)',fontSize:12,fontWeight:600,cursor:'pointer',textAlign:'left',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            style={{flex:1,padding:'8px 12px',borderRadius:10,border:'1.5px solid var(--border)',background:bodyPart!=='Any body part'?'var(--primary)':'var(--card2)',color:bodyPart!=='Any body part'?'var(--primary-contrast)':'var(--text)',fontSize:12,fontWeight:600,cursor:'pointer',textAlign:'left',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
             {bodyPart}
           </button>
           <button ref={catButtonRef} onClick={handleCategoryOpen}
-            style={{flex:1,padding:'8px 12px',borderRadius:10,border:'1.5px solid var(--border)',background:category!=='Any category'?'var(--primary)':'var(--card2)',color:category!=='Any category'?'#fff':'var(--text)',fontSize:12,fontWeight:600,cursor:'pointer',textAlign:'left',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+            style={{flex:1,padding:'8px 12px',borderRadius:10,border:'1.5px solid var(--border)',background:category!=='Any category'?'var(--primary)':'var(--card2)',color:category!=='Any category'?'var(--primary-contrast)':'var(--text)',fontSize:12,fontWeight:600,cursor:'pointer',textAlign:'left',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
             {category}
           </button>
           <button ref={sortButtonRef} onClick={handleSortOpen}
@@ -256,7 +256,7 @@ function ExercisesContent() {
                     <div style={{background:'var(--card)',borderRadius:20,border:'1.5px solid var(--border)',overflow:'hidden',marginBottom:12,animation:'slideUp 0.25s ease'}}>
 
                       {/* Video placeholder / embed */}
-                      <div style={{background:'#0f0f13',height:200,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
+                      <div style={{background:'var(--espresso)',height:200,display:'flex',alignItems:'center',justifyContent:'center',position:'relative',overflow:'hidden'}}>
                         {EXERCISE_VIDEOS[ex.id] ? (
                           <iframe
                             width="100%"
@@ -304,21 +304,21 @@ function ExercisesContent() {
                           <div style={{fontSize:11,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:8}}>How to perform</div>
                           {ex.instructions.split('. ').filter(Boolean).map((step,i)=>(
                             <div key={i} style={{display:'flex',gap:10,marginBottom:8}}>
-                              <div style={{width:22,height:22,borderRadius:'50%',background:'var(--primary)',color:'#fff',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>{i+1}</div>
+                              <div style={{width:22,height:22,borderRadius:'50%',background:'var(--primary)',color:'var(--primary-contrast)',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>{i+1}</div>
                               <div style={{fontSize:13,color:'var(--text)',lineHeight:1.6,flex:1}}>{step.trim()}{!step.endsWith('.')?'.':''}</div>
                             </div>
                           ))}
                         </div>
 
                         {/* Pro tip */}
-                        <div style={{background:'#fef3c7',borderRadius:12,padding:'12px 14px',border:'1px solid #fde68a',marginBottom:14}}>
-                          <div style={{fontSize:11,fontWeight:700,color:'#d97706',marginBottom:4}}>💡 Pro tip</div>
-                          <div style={{fontSize:12,color:'#92400e',lineHeight:1.6}}>{ex.tips}</div>
+                        <div style={{background:'var(--orange-bg)',borderRadius:12,padding:'12px 14px',border:'1px solid var(--border)',marginBottom:14}}>
+                          <div style={{fontSize:11,fontWeight:700,color:'var(--orange)',marginBottom:4}}>💡 Pro tip</div>
+                          <div style={{fontSize:12,color:'var(--orange)',lineHeight:1.6}}>{ex.tips}</div>
                         </div>
 
                         {/* Add to workout button */}
                         <button onClick={()=>router.push('/workout/active?quick=1&add='+ex.id)}
-                          style={{width:'100%',padding:'14px',background:'var(--primary)',border:'none',borderRadius:14,color:'#fff',fontWeight:700,fontSize:15,cursor:'pointer'}}>
+                          style={{width:'100%',padding:'14px',background:'var(--primary)',border:'none',borderRadius:14,color:'var(--primary-contrast)',fontWeight:700,fontSize:15,cursor:'pointer'}}>
                           + Add to workout
                         </button>
                       </div>

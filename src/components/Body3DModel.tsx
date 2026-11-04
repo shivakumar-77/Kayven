@@ -11,32 +11,32 @@ interface MuscleGroup {
 const MUSCLE_GROUPS: Record<string, MuscleGroup> = {
   chest: {
     name: 'Chest',
-    color: '#e05c8a',
+    color: 'var(--primary)',
     parts: [{ name: 'Pectoralis Major', vertices: [] }],
   },
   shoulders: {
     name: 'Shoulders',
-    color: '#7c6fe0',
+    color: 'var(--primary-light)',
     parts: [{ name: 'Deltoid', vertices: [] }],
   },
   arms: {
     name: 'Arms',
-    color: '#5b9ef0',
+    color: 'var(--blue)',
     parts: [{ name: 'Biceps', vertices: [] }],
   },
   core: {
     name: 'Core',
-    color: '#2ec4a0',
+    color: 'var(--green)',
     parts: [{ name: 'Abdominals', vertices: [] }],
   },
   legs: {
     name: 'Legs',
-    color: '#f0a030',
+    color: 'var(--orange)',
     parts: [{ name: 'Quadriceps', vertices: [] }],
   },
   back: {
     name: 'Back',
-    color: '#e04070',
+    color: 'var(--red)',
     parts: [{ name: 'Latissimus Dorsi', vertices: [] }],
   },
 }
@@ -54,12 +54,20 @@ export default function Body3DModel({
   const [view, setView] = useState<'front' | 'back' | 'side'>('front')
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
 
+  const resolveThemeColor = (value: string) => {
+    const variable = value.match(/^var\((--[^)]+)\)$/)?.[1]
+    const resolved = variable
+      ? getComputedStyle(document.documentElement).getPropertyValue(variable).trim()
+      : value
+    return new THREE.Color(resolved || value)
+  }
+
   useEffect(() => {
     if (!containerRef.current) return
 
     // Scene setup
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x111111)
+    scene.background = resolveThemeColor('var(--surface)')
     sceneRef.current = scene
 
     // Camera setup
@@ -91,6 +99,24 @@ export default function Body3DModel({
     // Create body mesh with muscle groups
     const body = createBodyMesh()
     bodyGroup.add(body)
+
+    const updateTheme = () => {
+      scene.background = resolveThemeColor('var(--surface)')
+      bodyGroup.traverse(object => {
+        const muscle = object.userData.muscle as string | undefined
+        const themeColor = object.userData.themeColor as string | undefined
+        if (!(object instanceof THREE.Mesh) || (!muscle && !themeColor)) return
+
+        const colorToken = themeColor || (muscle ? MUSCLE_GROUPS[muscle]?.color : undefined) || 'var(--primary)'
+        const color = resolveThemeColor(colorToken)
+        const materials = Array.isArray(object.material) ? object.material : [object.material]
+        materials.forEach(material => {
+          if (material instanceof THREE.MeshPhongMaterial) material.color.copy(color)
+        })
+      })
+    }
+    const themeObserver = new MutationObserver(updateTheme)
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 
     // Handle view changes
     const handleViewChange = () => {
@@ -126,6 +152,7 @@ export default function Body3DModel({
     window.addEventListener('resize', handleResize)
 
     return () => {
+      themeObserver.disconnect()
       window.removeEventListener('resize', handleResize)
       containerRef.current?.removeChild(renderer.domElement)
       renderer.dispose()
@@ -137,14 +164,15 @@ export default function Body3DModel({
 
     // Head
     const headGeometry = new THREE.SphereGeometry(0.3, 32, 32)
-    const headMaterial = new THREE.MeshPhongMaterial({ color: 0xe8c9a0 })
+    const headMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor('var(--beige)') })
     const head = new THREE.Mesh(headGeometry, headMaterial)
+    head.userData.themeColor = 'var(--beige)'
     head.position.y = 1.8
     bodyGroup.add(head)
 
     // Torso/Chest
     const chestGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4)
-    const chestMaterial = new THREE.MeshPhongMaterial({ color: 0xe05c8a })
+    const chestMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.chest.color) })
     const chest = new THREE.Mesh(chestGeometry, chestMaterial)
     chest.position.set(0, 1, 0)
     chest.userData.muscle = 'chest'
@@ -152,7 +180,7 @@ export default function Body3DModel({
 
     // Shoulders
     const shoulderGeometry = new THREE.SphereGeometry(0.2, 16, 16)
-    const shoulderMaterial = new THREE.MeshPhongMaterial({ color: 0x7c6fe0 })
+    const shoulderMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.shoulders.color) })
     const leftShoulder = new THREE.Mesh(shoulderGeometry, shoulderMaterial)
     leftShoulder.position.set(-0.4, 1.4, 0)
     leftShoulder.userData.muscle = 'shoulders'
@@ -164,7 +192,7 @@ export default function Body3DModel({
 
     // Arms
     const armGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.8, 16)
-    const armMaterial = new THREE.MeshPhongMaterial({ color: 0x5b9ef0 })
+    const armMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.arms.color) })
     const leftArm = new THREE.Mesh(armGeometry, armMaterial)
     leftArm.position.set(-0.6, 0.6, 0)
     leftArm.userData.muscle = 'arms'
@@ -176,7 +204,7 @@ export default function Body3DModel({
 
     // Forearms
     const forearmGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.7, 16)
-    const forearmMaterial = new THREE.MeshPhongMaterial({ color: 0x3a7acc })
+    const forearmMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.arms.color) })
     const leftForearm = new THREE.Mesh(forearmGeometry, forearmMaterial)
     leftForearm.position.set(-0.6, -0.2, 0)
     leftForearm.userData.muscle = 'arms'
@@ -188,7 +216,7 @@ export default function Body3DModel({
 
     // Core/Abs
     const coreGeometry = new THREE.BoxGeometry(0.4, 0.6, 0.35)
-    const coreMaterial = new THREE.MeshPhongMaterial({ color: 0x2ec4a0 })
+    const coreMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.core.color) })
     const core = new THREE.Mesh(coreGeometry, coreMaterial)
     core.position.set(0, 0.2, 0)
     core.userData.muscle = 'core'
@@ -196,14 +224,15 @@ export default function Body3DModel({
 
     // Pelvis
     const pelvisGeometry = new THREE.BoxGeometry(0.55, 0.3, 0.4)
-    const pelvisMaterial = new THREE.MeshPhongMaterial({ color: 0x1a1a22 })
+    const pelvisMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor('var(--figure-neutral)') })
     const pelvis = new THREE.Mesh(pelvisGeometry, pelvisMaterial)
+    pelvis.userData.themeColor = 'var(--figure-neutral)'
     pelvis.position.set(0, -0.5, 0)
     bodyGroup.add(pelvis)
 
     // Legs
     const legGeometry = new THREE.CylinderGeometry(0.15, 0.14, 1, 16)
-    const legMaterial = new THREE.MeshPhongMaterial({ color: 0xf0a030 })
+    const legMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.legs.color) })
     const leftLeg = new THREE.Mesh(legGeometry, legMaterial)
     leftLeg.position.set(-0.2, -1.2, 0)
     leftLeg.userData.muscle = 'legs'
@@ -215,7 +244,7 @@ export default function Body3DModel({
 
     // Calves
     const calfGeometry = new THREE.CylinderGeometry(0.12, 0.12, 0.8, 16)
-    const calfMaterial = new THREE.MeshPhongMaterial({ color: 0xe07820 })
+    const calfMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor(MUSCLE_GROUPS.legs.color) })
     const leftCalf = new THREE.Mesh(calfGeometry, calfMaterial)
     leftCalf.position.set(-0.2, -2, 0)
     leftCalf.userData.muscle = 'legs'
@@ -227,11 +256,13 @@ export default function Body3DModel({
 
     // Feet
     const footGeometry = new THREE.BoxGeometry(0.15, 0.1, 0.25)
-    const footMaterial = new THREE.MeshPhongMaterial({ color: 0xe8c9a0 })
+    const footMaterial = new THREE.MeshPhongMaterial({ color: resolveThemeColor('var(--beige)') })
     const leftFoot = new THREE.Mesh(footGeometry, footMaterial)
+    leftFoot.userData.themeColor = 'var(--beige)'
     leftFoot.position.set(-0.2, -2.5, 0)
     bodyGroup.add(leftFoot)
     const rightFoot = new THREE.Mesh(footGeometry, footMaterial)
+    rightFoot.userData.themeColor = 'var(--beige)'
     rightFoot.position.set(0.2, -2.5, 0)
     bodyGroup.add(rightFoot)
 
@@ -272,9 +303,10 @@ export default function Body3DModel({
       <div className="flex gap-3 mb-4">
         <button
           onClick={() => setView('front')}
+          aria-pressed={view === 'front'}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
             view === 'front'
-              ? 'bg-indigo-500 text-white'
+              ? 'bg-primary text-primary-contrast'
               : 'bg-card2 text-muted border border-border'
           }`}
         >
@@ -282,9 +314,10 @@ export default function Body3DModel({
         </button>
         <button
           onClick={() => setView('back')}
+          aria-pressed={view === 'back'}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
             view === 'back'
-              ? 'bg-indigo-500 text-white'
+              ? 'bg-primary text-primary-contrast'
               : 'bg-card2 text-muted border border-border'
           }`}
         >
@@ -292,9 +325,10 @@ export default function Body3DModel({
         </button>
         <button
           onClick={() => setView('side')}
+          aria-pressed={view === 'side'}
           className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
             view === 'side'
-              ? 'bg-indigo-500 text-white'
+              ? 'bg-primary text-primary-contrast'
               : 'bg-card2 text-muted border border-border'
           }`}
         >
@@ -309,7 +343,7 @@ export default function Body3DModel({
           height: 500,
           borderRadius: 20,
           overflow: 'hidden',
-          background: '#111',
+          background: 'var(--surface)',
           cursor: 'pointer',
         }}
       />

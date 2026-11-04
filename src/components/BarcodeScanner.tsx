@@ -73,12 +73,12 @@ export default function BarcodeScanner({ onResult }) {
     <div>
       <style>{`
         @keyframes scanline{0%,100%{top:15%}50%{top:78%}}
-        .scan-line{position:absolute;left:8%;right:8%;height:2px;background:rgba(99,102,241,0.9);animation:scanline 1.8s ease-in-out infinite;pointer-events:none;box-shadow:0 0 8px rgba(99,102,241,0.5)}
+        .scan-line{position:absolute;left:8%;right:8%;height:2px;background:var(--primary);animation:scanline 1.8s ease-in-out infinite;pointer-events:none;box-shadow:0 0 8px var(--primary-glow)}
         .scan-corner{position:absolute;width:24px;height:24px;pointer-events:none}
-        .sc-tl{top:10%;left:8%;border-top:3px solid #6366f1;border-left:3px solid #6366f1;border-radius:4px 0 0 0}
-        .sc-tr{top:10%;right:8%;border-top:3px solid #6366f1;border-right:3px solid #6366f1;border-radius:0 4px 0 0}
-        .sc-bl{bottom:10%;left:8%;border-bottom:3px solid #6366f1;border-left:3px solid #6366f1;border-radius:0 0 0 4px}
-        .sc-br{bottom:10%;right:8%;border-bottom:3px solid #6366f1;border-right:3px solid #6366f1;border-radius:0 0 4px 0}
+        .sc-tl{top:10%;left:8%;border-top:3px solid var(--primary);border-left:3px solid var(--primary);border-radius:4px 0 0 0}
+        .sc-tr{top:10%;right:8%;border-top:3px solid var(--primary);border-right:3px solid var(--primary);border-radius:0 4px 0 0}
+        .sc-bl{bottom:10%;left:8%;border-bottom:3px solid var(--primary);border-left:3px solid var(--primary);border-radius:0 0 0 4px}
+        .sc-br{bottom:10%;right:8%;border-bottom:3px solid var(--primary);border-right:3px solid var(--primary);border-radius:0 0 4px 0}
       `}</style>
 
       {mode === 'idle' && (
@@ -92,7 +92,7 @@ export default function BarcodeScanner({ onResult }) {
           <button className="btn btn-ghost" style={{ width: '100%', padding: '14px', fontSize: 14 }} onClick={() => setMode('manual')}>
             Enter barcode number
           </button>
-          {error && <div style={{ marginTop: 12, background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 12, padding: '10px 14px' }}><p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p></div>}
+          {error && <div style={{ marginTop: 12, background: 'var(--red-bg)', border: '1.5px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}><p style={{ color: 'var(--red)', fontSize: 13 }}>{error}</p></div>}
         </div>
       )}
 
@@ -107,7 +107,7 @@ export default function BarcodeScanner({ onResult }) {
           <p style={{ textAlign: 'center', color: loading ? 'var(--primary)' : 'var(--muted)', fontSize: 13, marginBottom: 12, fontWeight: loading ? 600 : 400 }}>
             {loading ? 'Looking up product...' : hint}
           </p>
-          {error && <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 12, padding: '10px 14px', marginBottom: 12 }}><p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p></div>}
+          {error && <div style={{ background: 'var(--red-bg)', border: '1.5px solid var(--border)', borderRadius: 12, padding: '10px 14px', marginBottom: 12 }}><p style={{ color: 'var(--red)', fontSize: 13 }}>{error}</p></div>}
           <button className="btn btn-ghost" style={{ width: '100%', marginBottom: 14 }} onClick={stopScan}>Cancel</button>
           <div style={{ borderTop: '1.5px solid var(--border)', paddingTop: 16 }}>
             <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8, fontWeight: 500 }}>Or type barcode number</p>
@@ -129,7 +129,7 @@ export default function BarcodeScanner({ onResult }) {
             <button className="btn btn-primary" onClick={() => manualCode && lookup(manualCode)} disabled={loading || !manualCode} style={{ flexShrink: 0, padding: '12px 20px' }}>{loading ? '...' : 'Search'}</button>
           </div>
           {loading && <p style={{ textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Looking up product...</p>}
-          {error && <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 12, padding: '10px 14px' }}><p style={{ color: '#dc2626', fontSize: 13 }}>{error}</p></div>}
+          {error && <div style={{ background: 'var(--red-bg)', border: '1.5px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}><p style={{ color: 'var(--red)', fontSize: 13 }}>{error}</p></div>}
         </div>
       )}
     </div>

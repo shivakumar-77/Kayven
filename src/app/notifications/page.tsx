@@ -133,13 +133,13 @@ export default function NotificationsPage() {
       </div>
 
       <div style={{ padding: '0 20px' }}>
-        {msg && <div style={{ background: '#d1fae5', border: '1.5px solid #6ee7b7', borderRadius: 12, padding: '10px 16px', marginBottom: 16, fontSize: 13, fontWeight: 600, color: '#059669' }}>✓ {msg}</div>}
+        {msg && <div style={{ background: 'var(--green-bg)', border: '1.5px solid var(--green)', borderRadius: 12, padding: '10px 16px', marginBottom: 16, fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>✓ {msg}</div>}
 
         {/* Permission card */}
         <div className="card" style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 16, background: permission === 'granted' ? '#d1fae5' : '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {permission === 'granted' ? <IconByName name="CheckIcon" size={22} color="#059669" /> : <IconByName name="BellIcon" size={22} color="#d97706" />}
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: permission === 'granted' ? 'var(--green-bg)' : 'var(--orange-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {permission === 'granted' ? <IconByName name="CheckIcon" size={22} color="var(--green)" /> : <IconByName name="BellIcon" size={22} color="var(--orange)" />}
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15 }}>
@@ -180,7 +180,7 @@ export default function NotificationsPage() {
                 {/* Toggle switch */}
                 <button onClick={() => toggleReminder(r.id)}
                   style={{ width: 48, height: 28, borderRadius: 99, background: r.enabled ? 'var(--primary)' : 'var(--border)', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
-                  <div style={{ position: 'absolute', top: 4, left: r.enabled ? 24 : 4, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}/>
+                  <div style={{ position: 'absolute', top: 4, left: r.enabled ? 24 : 4, width: 20, height: 20, borderRadius: '50%', background: 'var(--card)', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}/>
                 </button>
               </div>
             ))}
@@ -191,8 +191,8 @@ export default function NotificationsPage() {
           {saving ? 'Saving…' : '💾 Save reminders'}
         </button>
 
-        <div style={{ background: '#f0fdf4', borderRadius: 16, padding: '14px 16px', border: '1.5px solid #bbf7d0' }}>
-          <p style={{ fontSize: 12, color: '#15803d', lineHeight: 1.7 }}>
+        <div style={{ background: 'var(--green-bg)', borderRadius: 16, padding: '14px 16px', border: '1.5px solid var(--border)' }}>
+          <p style={{ fontSize: 12, color: 'var(--green)', lineHeight: 1.7 }}>
             ⚠️ Reminders only fire while the app is open in your browser or installed as a PWA. For persistent notifications, add Kayven to your home screen.
           </p>
         </div>

@@ -18,13 +18,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const colors: Record<ToastType, { bg: string; color: string }> = {
-    success: { bg: '#1c1c1e', color: '#fff' },
-    error:   { bg: '#ff453a', color: '#fff' },
-    warning: { bg: '#ff9f0a', color: '#fff' },
-    info:    { bg: '#0a84ff', color: '#fff' },
+    success: { bg: 'var(--green-bg)', color: 'var(--green)' },
+    error:   { bg: 'var(--red-bg)', color: 'var(--red)' },
+    warning: { bg: 'var(--orange-bg)', color: 'var(--orange)' },
+    info:    { bg: 'var(--blue-bg)', color: 'var(--blue)' },
   }
 
-  const icons = { success: <CheckIcon size={14} color="#30d158"/>, error: <CheckIcon size={14} color="#fff"/>, warning: <BoltIcon size={14} color="#fff"/>, info: <InfoIcon size={14} color="#fff"/> }
+  const icons = {
+    success: <CheckIcon size={14} color="var(--green)"/>,
+    error: <CheckIcon size={14} color="var(--red)"/>,
+    warning: <BoltIcon size={14} color="var(--orange)"/>,
+    info: <InfoIcon size={14} color="var(--blue)"/>,
+  }
 
   return (
     <ToastContext.Provider value={{ show }}>

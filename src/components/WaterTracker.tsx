@@ -36,8 +36,8 @@ export default function WaterTracker({ waterGoal = 2000 }) {
 
   const pct = Math.min(1, totalMl / waterGoal)
   const reached = totalMl >= waterGoal
-  const waterColor = reached ? '#10b981' : '#3b82f6'
-  const waveLighter = reached ? '#34d399' : '#60a5fa'
+  const waterColor = reached ? 'var(--green)' : 'var(--water)'
+  const waveLighter = reached ? 'color-mix(in srgb, var(--green) 78%, white)' : 'color-mix(in srgb, var(--water) 78%, white)'
   const GW = 90, GH = 180
   const fillH = Math.round((GH - 20) * pct)
   const fillY = GH - 10 - fillH
@@ -48,10 +48,10 @@ export default function WaterTracker({ waterGoal = 2000 }) {
         <div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>Hydration</div>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
-            <span style={{ fontWeight: 700, color: reached ? '#10b981' : 'var(--primary)' }}>{totalMl}ml</span> of {waterGoal}ml
+            <span style={{ fontWeight: 700, color: reached ? 'var(--green)' : 'var(--primary)' }}>{totalMl}ml</span> of {waterGoal}ml
           </div>
         </div>
-        <div style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 99, background: reached ? '#d1fae5' : 'var(--primary-bg)', color: reached ? '#059669' : 'var(--primary)' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 99, background: reached ? 'var(--green-bg)' : 'var(--primary-bg)', color: reached ? 'var(--green)' : 'var(--primary)' }}>
           {reached ? '🎉 Goal reached!' : `${waterGoal - totalMl}ml to go`}
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function WaterTracker({ waterGoal = 2000 }) {
               </clipPath>
             </defs>
             <path d={`M8 8 L4 ${GH-8} Q4 ${GH} 8 ${GH} L${GW-8} ${GH} Q${GW-4} ${GH} ${GW-4} ${GH-8} L${GW-8} 8 Z`}
-              fill="#f0f4ff" stroke="#e2e8f0" strokeWidth="1.5" />
+              fill="var(--card2)" stroke="var(--border)" strokeWidth="1.5" />
             <g clipPath="url(#wt-clip)">
               {pct > 0 && <>
                 <rect x="4" y={fillY + 8} width={GW-8} height={Math.max(0,fillH)}
@@ -83,10 +83,10 @@ export default function WaterTracker({ waterGoal = 2000 }) {
               </>}
             </g>
             <path d={`M8 8 L4 ${GH-8} Q4 ${GH} 8 ${GH} L${GW-8} ${GH} Q${GW-4} ${GH} ${GW-4} ${GH-8} L${GW-8} 8 Z`}
-              fill="none" stroke="rgba(99,102,241,0.25)" strokeWidth="1.5" />
+              fill="none" stroke="var(--border)" strokeWidth="1.5" />
             <path d="M16 12 L12 55" stroke="rgba(255,255,255,0.7)" strokeWidth="3" strokeLinecap="round" />
             {pct > 0.15 && (
-              <text x={GW/2} y={fillY + Math.max(22, fillH/2 + 6)} textAnchor="middle" fontSize="13" fontWeight="700" fill="white" opacity="0.95">
+              <text x={GW/2} y={fillY + Math.max(22, fillH/2 + 6)} textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--primary-contrast)" opacity="0.95">
                 {Math.round(pct*100)}%
               </text>
             )}

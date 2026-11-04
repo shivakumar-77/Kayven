@@ -53,11 +53,11 @@ export default function CaloriesPage() {
     if (!cal) return 'transparent'
     const target = profile?.cal_target || 1700
     const pct = cal / target
-    if (pct < 0.5) return '#dbeafe'
-    if (pct < 0.9) return '#d1fae5'
-    if (pct <= 1.15) return '#10b981'
-    if (pct <= 1.3) return '#fde68a'
-    return '#fca5a5'
+    if (pct < 0.5) return 'var(--blue-bg)'
+    if (pct < 0.9) return 'var(--green-bg)'
+    if (pct <= 1.15) return 'var(--green)'
+    if (pct <= 1.3) return 'var(--border)'
+    return 'var(--red-bg)'
   }
 
   const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate()
@@ -112,8 +112,8 @@ export default function CaloriesPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
           {[
             { label: 'Days logged', val: Object.keys(monthLogs).length, color: 'var(--primary)', icon: 'CalendarIcon' },
-            { label: 'Avg calories', val: monthAvgCal, color: '#10b981', icon: 'FireIcon' },
-            { label: 'On target', val: daysOnTarget, color: '#f59e0b', icon: 'TargetIcon' },
+            { label: 'Avg calories', val: monthAvgCal, color: 'var(--green)', icon: 'FireIcon' },
+            { label: 'On target', val: daysOnTarget, color: 'var(--orange)', icon: 'TargetIcon' },
           ].map(s => (
             <div key={s.label} className="card" style={{ padding: '12px 10px', textAlign: 'center' }}>
               <div style={{ fontSize: 20, marginBottom: 4, display: 'flex', justifyContent: 'center' }}>
@@ -170,8 +170,8 @@ export default function CaloriesPage() {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
                     opacity: isFuture ? 0.3 : 1, position: 'relative', padding: 0
                   }}>
-                  <span style={{ fontSize: 12, fontWeight: isToday || isSelected ? 700 : 500, color: isSelected ? '#fff' : 'var(--text)' }}>{day}</span>
-                  {dayData && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSelected ? '#fff' : 'var(--primary)', opacity: 0.8 }}/>}
+                  <span style={{ fontSize: 12, fontWeight: isToday || isSelected ? 700 : 500, color: isSelected ? 'var(--colored-label)' : 'var(--text)' }}>{day}</span>
+                  {dayData && <div style={{ width: 4, height: 4, borderRadius: '50%', background: isSelected ? 'var(--colored-label)' : 'var(--primary)', opacity: 0.8 }}/>}
                 </button>
               )
             })}
@@ -179,7 +179,7 @@ export default function CaloriesPage() {
 
           {/* Legend */}
           <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-            {[{c:'#10b981',l:'On target'},{c:'#fde68a',l:'Slightly over'},{c:'#fca5a5',l:'Over'},{c:'#dbeafe',l:'Under 50%'}].map(x=>(
+            {[{c:'var(--green)',l:'On target'},{c:'var(--border)',l:'Slightly over'},{c:'var(--red-bg)',l:'Over'},{c:'var(--blue-bg)',l:'Under 50%'}].map(x=>(
               <div key={x.l} style={{ display:'flex', alignItems:'center', gap:4 }}>
                 <div style={{ width:10, height:10, borderRadius:3, background:x.c }}/>
                 <span style={{ fontSize:10, color:'var(--muted)' }}>{x.l}</span>
@@ -226,10 +226,10 @@ export default function CaloriesPage() {
                 {/* Day macros summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 4 }}>
                   {[
-                    {l:'Cal',v:Math.round(monthLogs[selectedDay]?.cal||0),c:'#6366f1'},
-                    {l:'Protein',v:Math.round(monthLogs[selectedDay]?.protein||0),c:'#3b82f6'},
-                    {l:'Carbs',v:Math.round(monthLogs[selectedDay]?.carb||0),c:'#f59e0b'},
-                    {l:'Fat',v:Math.round(monthLogs[selectedDay]?.fat||0),c:'#ef4444'},
+                    {l:'Cal',v:Math.round(monthLogs[selectedDay]?.cal||0),c:'var(--primary)'},
+                    {l:'Protein',v:Math.round(monthLogs[selectedDay]?.protein||0),c:'var(--blue)'},
+                    {l:'Carbs',v:Math.round(monthLogs[selectedDay]?.carb||0),c:'var(--orange)'},
+                    {l:'Fat',v:Math.round(monthLogs[selectedDay]?.fat||0),c:'var(--red)'},
                   ].map(m=>(
                     <div key={m.l} style={{ background:'var(--card2)', borderRadius:10, padding:'8px 4px', textAlign:'center' }}>
                       <div style={{ fontSize:9, color:m.c, fontWeight:700, textTransform:'uppercase' }}>{m.l}</div>

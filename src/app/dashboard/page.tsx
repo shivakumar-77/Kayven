@@ -41,7 +41,7 @@ function getFoodImage(name) {
 
 const STATUS_CONFIG = {
   on_track: { iconType: 'check', label: 'On track', color: 'var(--green)', bg: 'var(--green-bg)' },
-  low_protein: { iconType: 'muscle', label: 'Low protein', color: 'var(--blue)', bg: 'var(--blue-bg)' },
+  low_protein: { iconType: 'muscle', label: 'Low protein', color: 'var(--protein)', bg: 'var(--primary-bg)' },
   low_calories: { iconType: 'bolt', label: 'Need more food', color: 'var(--orange)', bg: 'var(--orange-bg)' },
   over_calories: { iconType: 'warning', label: 'Over calories', color: 'var(--red)', bg: 'var(--red-bg)' },
   great: { iconType: 'trophy', label: 'Perfect day!', color: 'var(--green)', bg: 'var(--green-bg)' },
@@ -316,7 +316,7 @@ export default function Dashboard() {
   const quickActions = [
     { icon: <MealPlanIcon size={19} color="var(--green)"/>, iconBg: 'var(--green-bg)', title: 'Meal Planner', sub: 'AI-generated daily plan', path: '/meal-plan' },
     { icon: <ChartBarIcon size={19} color="var(--primary)"/>, iconBg: 'var(--primary-bg)', title: 'Insights', sub: 'Weekly AI nutrition report', path: '/insights' },
-    { icon: <SupplementIcon size={19} color="#ec4899"/>, iconBg: '#fce7f3', title: 'Supplements', sub: 'Track daily intake', path: '/supplements' },
+    { icon: <SupplementIcon size={19} color="var(--green)"/>, iconBg: 'var(--green-bg)', title: 'Supplements', sub: 'Track daily intake', path: '/supplements' },
   ]
 
   return (
@@ -355,7 +355,7 @@ export default function Dashboard() {
           </h1>
         </div>
         <button onClick={() => router.push('/profile')} className="press-effect" style={{ background:'none', border:'none', cursor:'pointer', padding:0 }}>
-          <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', background:'linear-gradient(135deg,var(--primary),var(--primary-light))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, fontWeight:800, color:'#fff', border:'2px solid var(--border)' }}>
+          <div style={{ width:44, height:44, borderRadius:'50%', overflow:'hidden', background:'linear-gradient(135deg,var(--primary),var(--primary-light))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, fontWeight:800, color:'var(--primary-contrast)', border:'2px solid var(--border)' }}>
             {profile?.photo_url ? <img src={profile.photo_url} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/> : (profile?.name?.[0]?.toUpperCase() || '?')}
           </div>
         </button>
@@ -387,7 +387,7 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginTop:24 }}>
-          <MiniRing label="Protein" value={totals.protein} target={g.protein_target} unit="g" color="var(--blue)"/>
+          <MiniRing label="Protein" value={totals.protein} target={g.protein_target} unit="g" color="var(--protein)"/>
           <MiniRing label="Carbs" value={totals.carb} target={g.carb_target} unit="g" color="var(--orange)"/>
           <MiniRing label="Fat" value={totals.fat} target={g.fat_target} unit="g" color="var(--red)"/>
           <MiniRing label="Fiber" value={totals.fiber} target={g.fiber_target} unit="g" color="var(--green)"/>
@@ -446,21 +446,21 @@ export default function Dashboard() {
         <div style={{ position:'relative', width:52, height:52, flexShrink:0 }}>
           <svg width="52" height="52" style={{ transform:'rotate(-90deg)', display:'block' }}>
             <circle cx="26" cy="26" r="22" fill="none" stroke="var(--card2)" strokeWidth="5"/>
-            <circle cx="26" cy="26" r="22" fill="none" stroke={waterMl>=waterGoal?'var(--green)':'var(--blue)'} strokeWidth="5"
+            <circle cx="26" cy="26" r="22" fill="none" stroke={waterMl>=waterGoal?'var(--green)':'var(--water)'} strokeWidth="5"
               strokeLinecap="round" strokeDasharray={2*Math.PI*22} strokeDashoffset={2*Math.PI*22*(1-waterPct)}
               style={{ transition:'stroke-dashoffset 0.8s cubic-bezier(.4,0,.2,1)' }}/>
           </svg>
           <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <DropletIcon size={19} color={waterMl>=waterGoal?'var(--green)':'var(--blue)'}/>
+            <DropletIcon size={19} color={waterMl>=waterGoal?'var(--green)':'var(--water)'}/>
           </div>
         </div>
         <div style={{ flex:1, minWidth:0 }}>
           <div style={{ fontWeight:700, fontSize:15 }}>Hydration</div>
           <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>
-            <span style={{ fontWeight:700, color:waterMl>=waterGoal?'var(--green)':'var(--blue)' }}>{waterMl}ml</span> of {waterGoal}ml
+            <span style={{ fontWeight:700, color:waterMl>=waterGoal?'var(--green)':'var(--water)' }}>{waterMl}ml</span> of {waterGoal}ml
           </div>
         </div>
-        <div style={{ fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:99, background:waterMl>=waterGoal?'var(--green-bg)':'var(--blue-bg)', color:waterMl>=waterGoal?'var(--green)':'var(--blue)', display:'flex', alignItems:'center', gap:5, flexShrink:0, whiteSpace:'nowrap' }}>
+        <div style={{ fontSize:11, fontWeight:700, padding:'5px 12px', borderRadius:99, background:waterMl>=waterGoal?'var(--green-bg)':'var(--blue-bg)', color:waterMl>=waterGoal?'var(--green)':'var(--water)', display:'flex', alignItems:'center', gap:5, flexShrink:0, whiteSpace:'nowrap' }}>
           {waterMl>=waterGoal ? <><PartyIcon size={13}/> Done</> : `${waterGoal-waterMl}ml left`}
         </div>
       </div>
@@ -487,7 +487,7 @@ export default function Dashboard() {
         </button>
         <button type="button" onClick={() => router.push('/sleep')} className="card press-effect" style={{ minWidth: 0, padding: 13, textAlign: 'left', cursor: 'pointer', color: 'var(--text)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 5 }}>
-            <span style={{ width: 30, height: 30, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'var(--purple-bg)', color: 'var(--purple)' }}><MoonIcon size={16} /></span>
+            <span style={{ width: 30, height: 30, display: 'grid', placeItems: 'center', borderRadius: 10, background: 'var(--primary-bg)', color: 'var(--primary)' }}><MoonIcon size={16} /></span>
             <span style={{ color: 'var(--muted)', fontSize: 9, fontWeight: 700 }}>RECOVERY</span>
           </div>
           <strong style={{ display: 'block', marginTop: 12, fontSize: 19, lineHeight: 1.1, letterSpacing: '-.03em' }}>
@@ -497,7 +497,7 @@ export default function Dashboard() {
             {!healthTracking.sleepAvailable ? 'Apply the health tracking migration' : healthTracking.sleep ? (sleepDifference === 0 ? `At ${Math.floor(healthTracking.sleepGoal / 60)}h goal` : `${sleepDifferenceText} ${healthTracking.sleep.duration_minutes > healthTracking.sleepGoal ? 'above' : 'below'} · ${Math.floor(healthTracking.sleepGoal / 60)}h goal`) : 'Log sleep manually'}
           </span>
           {healthTracking.sleep && <span style={{ display: 'block', color: 'var(--muted)', fontSize: 9, lineHeight: 1.35, marginTop: 4 }}>{new Date(healthTracking.sleep.started_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}–{new Date(healthTracking.sleep.ended_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}</span>}
-          {healthTracking.sleep && <div role="progressbar" aria-label="Sleep duration goal" aria-valuenow={Math.min(healthTracking.sleep.duration_minutes, healthTracking.sleepGoal)} aria-valuemin={0} aria-valuemax={healthTracking.sleepGoal} style={{ height: 5, overflow: 'hidden', marginTop: 10, borderRadius: 6, background: 'var(--card2)' }}><div style={{ width: `${Math.min(100, Math.round(healthTracking.sleep.duration_minutes / healthTracking.sleepGoal * 100))}%`, height: '100%', background: 'var(--purple)' }} /></div>}
+          {healthTracking.sleep && <div role="progressbar" aria-label="Sleep duration goal" aria-valuenow={Math.min(healthTracking.sleep.duration_minutes, healthTracking.sleepGoal)} aria-valuemin={0} aria-valuemax={healthTracking.sleepGoal} style={{ height: 5, overflow: 'hidden', marginTop: 10, borderRadius: 6, background: 'var(--card2)' }}><div style={{ width: `${Math.min(100, Math.round(healthTracking.sleep.duration_minutes / healthTracking.sleepGoal * 100))}%`, height: '100%', background: 'var(--primary)' }} /></div>}
           <span style={{ display: 'block', color: 'var(--primary)', fontSize: 10, fontWeight: 700, marginTop: 9 }}>Open sleep →</span>
         </button>
       </section>

@@ -17,11 +17,11 @@ export default function BMIPage() {
     if (!h || !w) return
     const bmi = w / ((h / 100) ** 2)
     let category, color, advice
-    if (bmi < 18.5) { category = 'Underweight'; color = '#3b82f6'; advice = 'Focus on nutrient-dense foods and strength training to gain healthy weight.' }
-    else if (bmi < 25) { category = 'Normal weight'; color = '#10b981'; advice = 'Great! Maintain balanced nutrition and regular exercise.' }
-    else if (bmi < 30) { category = 'Overweight'; color = '#f59e0b'; advice = 'A calorie deficit of 300–500 kcal/day with regular exercise can help.' }
-    else if (bmi < 35) { category = 'Obese (Class I)'; color = '#ef4444'; advice = 'Consult a healthcare provider for a structured diet and exercise plan.' }
-    else { category = 'Obese (Class II+)'; color = '#dc2626'; advice = 'Please consult a doctor. Medical supervision is recommended.' }
+    if (bmi < 18.5) { category = 'Underweight'; color = 'var(--blue)'; advice = 'Focus on nutrient-dense foods and strength training to gain healthy weight.' }
+    else if (bmi < 25) { category = 'Normal weight'; color = 'var(--green)'; advice = 'Great! Maintain balanced nutrition and regular exercise.' }
+    else if (bmi < 30) { category = 'Overweight'; color = 'var(--orange)'; advice = 'A calorie deficit of 300–500 kcal/day with regular exercise can help.' }
+    else if (bmi < 35) { category = 'Obese (Class I)'; color = 'var(--red)'; advice = 'Consult a healthcare provider for a structured diet and exercise plan.' }
+    else { category = 'Obese (Class II+)'; color = 'var(--red)'; advice = 'Please consult a doctor. Medical supervision is recommended.' }
     const idealMin = (18.5 * ((h / 100) ** 2)).toFixed(1)
     const idealMax = (24.9 * ((h / 100) ** 2)).toFixed(1)
     const toLose = w > parseFloat(idealMax) ? (w - parseFloat(idealMax)).toFixed(1) : null
@@ -52,11 +52,11 @@ export default function BMIPage() {
   // Segments: from left (180deg) to right (0deg)
   // BMI 10=180deg, 18.5=132deg, 25=90deg, 30=60deg, 35=30deg, 40=0deg
   const segs = [
-    { color: '#3b82f6', label: 'Under', from: 180, to: 132 },   // Underweight
-    { color: '#10b981', label: 'Normal', from: 132, to: 90 },   // Normal
-    { color: '#f59e0b', label: 'Over', from: 90, to: 60 },      // Overweight
-    { color: '#ef4444', label: 'Obese I', from: 60, to: 30 },   // Obese I
-    { color: '#dc2626', label: 'Obese II', from: 30, to: 0 },   // Obese II
+    { color: 'var(--blue)', label: 'Under', from: 180, to: 132 },   // Underweight
+    { color: 'var(--green)', label: 'Normal', from: 132, to: 90 },   // Normal
+    { color: 'var(--orange)', label: 'Over', from: 90, to: 60 },      // Overweight
+    { color: 'var(--red)', label: 'Obese I', from: 60, to: 30 },   // Obese I
+    { color: 'var(--red)', label: 'Obese II', from: 30, to: 0 },   // Obese II
   ]
 
   const cx = 150, cy = 140, r = 110, ri = 70
@@ -121,7 +121,7 @@ export default function BMIPage() {
                 ))}
 
                 {/* Inner white circle to create donut */}
-                <circle cx={cx} cy={cy} r={ri} fill="white"/>
+                <circle cx={cx} cy={cy} r={ri} fill="var(--primary-contrast)"/>
 
                 {/* Segment labels — positioned at midpoint of each arc, outside */}
                 {segs.map((seg, i) => {
@@ -146,22 +146,22 @@ export default function BMIPage() {
                     <>
                       <polygon
                         points={tip.x + ',' + tip.y + ' ' + base1.x + ',' + base1.y + ' ' + base2.x + ',' + base2.y}
-                        fill="#1e293b"
+                        fill="var(--primary)"
                       />
-                      <circle cx={cx} cy={cy} r="8" fill="#1e293b"/>
-                      <circle cx={cx} cy={cy} r="4" fill="white"/>
+                      <circle cx={cx} cy={cy} r="8" fill="var(--primary)"/>
+                      <circle cx={cx} cy={cy} r="4" fill="var(--primary-contrast)"/>
                     </>
                   )
                 })()}
 
                 {/* BMI value in center */}
                 <text x={cx} y={cy - 14} textAnchor="middle" fontSize="26" fontWeight="800" fill={result.color}>{result.bmi}</text>
-                <text x={cx} y={cy + 4} textAnchor="middle" fontSize="9" fill="#94a3b8" fontWeight="500">BMI</text>
+                <text x={cx} y={cy + 4} textAnchor="middle" fontSize="9" fill="var(--muted)" fontWeight="500">BMI</text>
                 <text x={cx} y={cy + 18} textAnchor="middle" fontSize="12" fontWeight="700" fill={result.color}>{result.category}</text>
 
                 {/* Scale labels at ends */}
-                <text x="18" y={cy + 4} textAnchor="middle" fontSize="8" fill="#64748b">10</text>
-                <text x={cx * 2 - 18} y={cy + 4} textAnchor="middle" fontSize="8" fill="#64748b">40</text>
+                <text x="18" y={cy + 4} textAnchor="middle" fontSize="8" fill="var(--muted)">10</text>
+                <text x={cx * 2 - 18} y={cy + 4} textAnchor="middle" fontSize="8" fill="var(--muted)">40</text>
               </svg>
             </div>
 
@@ -170,41 +170,41 @@ export default function BMIPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
                 <div style={{ background: 'var(--surface)', borderRadius: 14, padding: '14px', border: '1.5px solid var(--border)' }}>
                   <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Ideal weight</div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#10b981' }}>{result.idealMin}–{result.idealMax} kg</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--green)' }}>{result.idealMin}–{result.idealMax} kg</div>
                 </div>
                 <div style={{ background: 'var(--surface)', borderRadius: 14, padding: '14px', border: '1.5px solid var(--border)' }}>
                   <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>{result.toLose ? 'To lose' : result.toGain ? 'To gain' : 'Status'}</div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: result.toLose ? '#ef4444' : result.toGain ? '#3b82f6' : '#10b981' }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: result.toLose ? 'var(--red)' : result.toGain ? 'var(--blue)' : 'var(--green)' }}>
                     {result.toLose ? result.toLose + ' kg' : result.toGain ? result.toGain + ' kg' : '✓ Healthy'}
                   </div>
                 </div>
               </div>
-              <div style={{ background: '#fef3c7', borderRadius: 14, padding: '14px', border: '1.5px solid #fde68a' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#d97706', marginBottom: 4 }}>💡 Advice</div>
-                <div style={{ fontSize: 13, color: '#92400e', lineHeight: 1.6 }}>{result.advice}</div>
+              <div style={{ background: 'var(--orange-bg)', borderRadius: 14, padding: '14px', border: '1.5px solid var(--border)' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--orange)', marginBottom: 4 }}>💡 Advice</div>
+                <div style={{ fontSize: 13, color: 'var(--orange)', lineHeight: 1.6 }}>{result.advice}</div>
               </div>
             </div>
 
             <div className="card" style={{ marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 14 }}>BMI chart</div>
               {[
-                { label: 'Underweight', range: '< 18.5', color: '#3b82f6' },
-                { label: 'Normal weight', range: '18.5–24.9', color: '#10b981' },
-                { label: 'Overweight', range: '25–29.9', color: '#f59e0b' },
-                { label: 'Obese Class I', range: '30–34.9', color: '#ef4444' },
-                { label: 'Obese Class II+', range: '≥ 35', color: '#dc2626' },
+                { label: 'Underweight', range: '< 18.5', color: 'var(--blue)' },
+                { label: 'Normal weight', range: '18.5–24.9', color: 'var(--green)' },
+                { label: 'Overweight', range: '25–29.9', color: 'var(--orange)' },
+                { label: 'Obese Class I', range: '30–34.9', color: 'var(--red)' },
+                { label: 'Obese Class II+', range: '≥ 35', color: 'var(--red)' },
               ].map((r, i, arr) => (
                 <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }}/>
                   <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{r.label}</div>
                   <div style={{ fontSize: 13, color: 'var(--muted)' }}>{r.range}</div>
-                  {result.category === r.label && <div style={{ fontSize: 10, fontWeight: 700, background: r.color, color: '#fff', padding: '3px 10px', borderRadius: 99 }}>YOU</div>}
+                  {result.category === r.label && <div style={{ fontSize: 10, fontWeight: 700, background: r.color, color: 'var(--primary-contrast)', padding: '3px 10px', borderRadius: 99 }}>YOU</div>}
                 </div>
               ))}
             </div>
 
-            <div style={{ background: '#f0fdf4', borderRadius: 16, padding: '14px 16px', border: '1.5px solid #bbf7d0', marginBottom: 24 }}>
-              <p style={{ fontSize: 12, color: '#15803d', lineHeight: 1.6 }}>⚠️ BMI is a screening tool, not a diagnostic measure. Consult a healthcare professional for a complete assessment.</p>
+            <div style={{ background: 'var(--green-bg)', borderRadius: 16, padding: '14px 16px', border: '1.5px solid var(--border)', marginBottom: 24 }}>
+              <p style={{ fontSize: 12, color: 'var(--green)', lineHeight: 1.6 }}>⚠️ BMI is a screening tool, not a diagnostic measure. Consult a healthcare professional for a complete assessment.</p>
             </div>
           </div>
         )}

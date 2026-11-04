@@ -90,7 +90,7 @@ export default function TemplatePage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h1 style={{ fontSize:24, fontWeight:800, letterSpacing:'-0.02em', flex:1, color:'var(--text)' }}>Templates</h1>
-          <button onClick={startCreate} className="press-effect" style={{ background:'var(--primary)', border:'none', borderRadius:12, padding:'9px 16px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
+          <button onClick={startCreate} className="press-effect" style={{ background:'var(--primary)', border:'none', borderRadius:12, padding:'9px 16px', color:'var(--primary-contrast)', fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', gap:5 }}>
             <IconPlus size={12}/> New
           </button>
         </div>
@@ -125,7 +125,7 @@ export default function TemplatePage() {
                 ))}
               </div>
               <button onClick={()=>router.push('/workout/active?template='+t.id)} className="press-effect"
-                style={{ width:'100%', padding:'12px', borderRadius:13, background:'var(--primary)', border:'none', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7, boxShadow:'0 6px 16px -6px var(--primary)' }}>
+                style={{ width:'100%', padding:'12px', borderRadius:13, background:'var(--primary)', border:'none', color:'var(--primary-contrast)', fontWeight:700, fontSize:13, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:7, boxShadow:'0 6px 16px -6px var(--primary)' }}>
                 <IconPlay size={11}/> Start workout
               </button>
             </div>
@@ -150,7 +150,7 @@ export default function TemplatePage() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h1 style={{ fontSize:20, fontWeight:800, letterSpacing:'-0.02em', flex:1, color:'var(--text)' }}>{editTemplate?'Edit':'New'} Template</h1>
-          <button onClick={save} disabled={saving||!tName.trim()} className="press-effect" style={{ background:'var(--primary)', border:'none', borderRadius:12, padding:'9px 16px', color:'#fff', fontWeight:700, fontSize:13, cursor:'pointer', opacity:!tName.trim()?0.5:1 }}>
+          <button onClick={save} disabled={saving||!tName.trim()} className="press-effect" style={{ background:'var(--primary)', border:'none', borderRadius:12, padding:'9px 16px', color:'var(--primary-contrast)', fontWeight:700, fontSize:13, cursor:'pointer', opacity:!tName.trim()?0.5:1 }}>
             {saving?'Saving…':'Save'}
           </button>
         </div>
@@ -192,7 +192,7 @@ export default function TemplatePage() {
               <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:4 }}>
                 {CATEGORIES.map(c=>(
                   <button key={c} onClick={()=>setFilterCat(c)} className="press-effect"
-                    style={{ padding:'6px 13px', borderRadius:99, fontSize:12, fontWeight:700, cursor:'pointer', flexShrink:0, border:'1.5px solid '+(filterCat===c?'var(--primary)':'var(--border)'), background:filterCat===c?'var(--primary)':'transparent', color:filterCat===c?'#fff':'var(--muted)' }}>
+                    style={{ padding:'6px 13px', borderRadius:99, fontSize:12, fontWeight:700, cursor:'pointer', flexShrink:0, border:'1.5px solid '+(filterCat===c?'var(--primary)':'var(--border)'), background:filterCat===c?'var(--primary)':'transparent', color:filterCat===c?'var(--primary-contrast)':'var(--muted)' }}>
                     {c}
                   </button>
                 ))}

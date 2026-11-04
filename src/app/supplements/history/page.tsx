@@ -38,9 +38,9 @@ export default function SupplementHistoryPage() {
   }
   function dayColor(pct) {
     if (pct===0) return 'var(--card2)'
-    if (pct<50) return '#fef3c7'
-    if (pct<100) return '#d1fae5'
-    return '#10b981'
+    if (pct<50) return 'var(--orange-bg)'
+    if (pct<100) return 'var(--green-bg)'
+    return 'var(--green)'
   }
 
   // Group logs by date
@@ -93,15 +93,15 @@ export default function SupplementHistoryPage() {
               return (
                 <div key={day}
                   style={{aspectRatio:'1',borderRadius:8,background:dayColor(pct),border:isToday?'2px solid var(--primary)':'2px solid transparent',opacity:isFuture?0.3:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:1}}>
-                  <span style={{fontSize:10,fontWeight:isToday?700:400,color:pct===100?'#fff':'var(--text)'}}>{day}</span>
-                  {pct>0&&<div style={{width:4,height:4,borderRadius:'50%',background:pct===100?'#fff':'#10b981',opacity:0.8}}/>}
+                  <span style={{fontSize:10,fontWeight:isToday?700:400,color:pct===100?'var(--colored-label)':'var(--text)'}}>{day}</span>
+                  {pct>0&&<div style={{width:4,height:4,borderRadius:'50%',background:pct===100?'var(--colored-label)':'var(--green)',opacity:0.8}}/>}
                 </div>
               )
             })}
           </div>
 
           <div style={{display:'flex',gap:12,marginTop:12,flexWrap:'wrap'}}>
-            {[{c:'#10b981',l:'100% done'},{c:'#d1fae5',l:'Partial'},{c:'#fef3c7',l:'< 50%'},{c:'var(--card2)',l:'None'}].map(x=>(
+            {[{c:'var(--green)',l:'100% done'},{c:'var(--green-bg)',l:'Partial'},{c:'var(--orange-bg)',l:'< 50%'},{c:'var(--card2)',l:'None'}].map(x=>(
               <div key={x.l} style={{display:'flex',alignItems:'center',gap:4}}>
                 <div style={{width:10,height:10,borderRadius:3,background:x.c,border:'1px solid var(--border)'}}/>
                 <span style={{fontSize:10,color:'var(--muted)'}}>{x.l}</span>
@@ -125,7 +125,7 @@ export default function SupplementHistoryPage() {
                 const supp = supplements.find(s=>s.id===log.supplement_id)
                 return (
                   <div key={log.id} style={{display:'flex',alignItems:'center',gap:12,padding:'11px 14px',borderBottom:i<dayLog.length-1?'0.5px solid var(--border)':'none'}}>
-                    <div style={{width:32,height:32,borderRadius:10,background:(supp?.color||'var(--primary)')+'22',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>
+                    <div style={{width:32,height:32,borderRadius:10,background:`color-mix(in srgb, ${getSupplementColor(supp || {})} 14%, transparent)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,flexShrink:0}}>
                       {supp?.icon||'PillIcon'}
                     </div>
                     <div style={{flex:1}}>

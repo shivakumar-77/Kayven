@@ -6,21 +6,21 @@ import { EXERCISES } from '@/lib/exercises'
 import BottomNav from '@/components/BottomNav'
 
 const MUSCLE_GROUPS = [
-  { id:'Chest',     label:'Chest',     emoji:'🫁', color:'#6366f1', desc:'Pectoralis major, minor', front:true,
+  { id:'Chest',     label:'Chest',     emoji:'🫁', color:'var(--primary)', desc:'Pectoralis major, minor', front:true,
     muscles:['Pectoralis Major','Pectoralis Minor','Serratus Anterior'] },
-  { id:'Shoulders', label:'Shoulders', emoji:'MuscleIcon', color:'#3b82f6', desc:'Front, side & rear delts', front:true,
+  { id:'Shoulders', label:'Shoulders', emoji:'MuscleIcon', color:'var(--blue)', desc:'Front, side & rear delts', front:true,
     muscles:['Anterior Deltoid','Lateral Deltoid','Posterior Deltoid'] },
-  { id:'Arms',      label:'Arms',      emoji:'MuscleIcon', color:'#8b5cf6', desc:'Biceps, triceps, forearms', front:true,
+  { id:'Arms',      label:'Arms',      emoji:'MuscleIcon', color:'var(--primary-light)', desc:'Biceps, triceps, forearms', front:true,
     muscles:['Biceps Brachii','Brachialis','Triceps Brachii','Forearms'] },
-  { id:'Core',      label:'Core',      emoji:'FireIcon', color:'#10b981', desc:'Abs, obliques, lower back', front:true,
+  { id:'Core',      label:'Core',      emoji:'FireIcon', color:'var(--green)', desc:'Abs, obliques, lower back', front:true,
     muscles:['Rectus Abdominis','Obliques','Transverse Abdominis','Erector Spinae'] },
-  { id:'Legs',      label:'Legs',      emoji:'LegIcon', color:'#f59e0b', desc:'Quads, hamstrings, glutes, calves', front:true,
+  { id:'Legs',      label:'Legs',      emoji:'LegIcon', color:'var(--orange)', desc:'Quads, hamstrings, glutes, calves', front:true,
     muscles:['Quadriceps','Hamstrings','Glutes','Gastrocnemius','Soleus'] },
-  { id:'Back',      label:'Back',      emoji:'MuscleIcon', color:'#ef4444', desc:'Lats, traps, rhomboids', front:false,
+  { id:'Back',      label:'Back',      emoji:'MuscleIcon', color:'var(--red)', desc:'Lats, traps, rhomboids', front:false,
     muscles:['Latissimus Dorsi','Trapezius','Rhomboids','Erector Spinae'] },
-  { id:'Full Body', label:'Full Body', emoji:'BoltIcon', color:'#0ea5e9', desc:'Olympic & compound movements', front:true,
+  { id:'Full Body', label:'Full Body', emoji:'BoltIcon', color:'var(--blue)', desc:'Olympic & compound movements', front:true,
     muscles:['All major muscle groups'] },
-  { id:'Cardio',    label:'Cardio',    emoji:'PlayIcon', color:'#ec4899', desc:'Cardiovascular training', front:true,
+  { id:'Cardio',    label:'Cardio',    emoji:'PlayIcon', color:'var(--water)', desc:'Cardiovascular training', front:true,
     muscles:['Cardiovascular system'] },
 ]
 
@@ -74,7 +74,7 @@ export default function BodyMapPage() {
           <div style={{display:'flex',background:'var(--card2)',borderRadius:10,padding:2,border:'1.5px solid var(--border)'}}>
             {['male','female'].map(g=>(
               <button key={g} onClick={()=>setGender(g)}
-                style={{padding:'5px 10px',borderRadius:8,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',background:gender===g?'var(--primary)':'transparent',color:gender===g?'#fff':'var(--muted)',textTransform:'capitalize',WebkitTapHighlightColor:'transparent'}}>
+                style={{padding:'5px 10px',borderRadius:8,border:'none',fontSize:11,fontWeight:600,cursor:'pointer',background:gender===g?'var(--primary)':'transparent',color:gender===g?'var(--primary-contrast)':'var(--muted)',textTransform:'capitalize',WebkitTapHighlightColor:'transparent'}}>
                 {g==='male'?'♂ M':'♀ F'}
               </button>
             ))}
@@ -85,7 +85,7 @@ export default function BodyMapPage() {
         <div style={{display:'flex',background:'var(--card2)',borderRadius:14,padding:4,marginBottom:20,border:'1.5px solid var(--border)'}}>
           {['front','back'].map(v=>(
             <button key={v} onClick={()=>{setView(v);if(selected&&v==='front'&&selected==='Back')setSelected(null);if(selected&&v==='back'&&['Chest','Core'].includes(selected))setSelected(null)}}
-              style={{flex:1,padding:'10px',borderRadius:10,border:'none',fontSize:13,fontWeight:600,cursor:'pointer',background:view===v?'var(--primary)':'transparent',color:view===v?'#fff':'var(--muted)',textTransform:'capitalize',WebkitTapHighlightColor:'transparent'}}>
+              style={{flex:1,padding:'10px',borderRadius:10,border:'none',fontSize:13,fontWeight:600,cursor:'pointer',background:view===v?'var(--primary)':'transparent',color:view===v?'var(--primary-contrast)':'var(--muted)',textTransform:'capitalize',WebkitTapHighlightColor:'transparent'}}>
               {v==='front'?'Front View':'Back View'}
             </button>
           ))}
@@ -123,109 +123,109 @@ export default function BodyMapPage() {
               <>
                 {/* Chest */}
                 <ellipse cx="150" cy="130" rx="38" ry="30"
-                  fill={selected==='Chest'?'#6366f1':'#6366f1'} fillOpacity={selected==='Chest'?0.75:0.22}
-                  stroke="#6366f1" strokeWidth={selected==='Chest'?2.5:1}
+                  fill={selected==='Chest'?'var(--primary)':'var(--primary)'} fillOpacity={selected==='Chest'?0.75:0.22}
+                  stroke="var(--primary)" strokeWidth={selected==='Chest'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Chest'?null:'Chest')}/>
-                <text x="150" y="134" textAnchor="middle" fontSize="10" fontWeight="800" fill="#6366f1" style={{pointerEvents:'none'}}>CHEST</text>
+                <text x="150" y="134" textAnchor="middle" fontSize="10" fontWeight="800" fill="var(--primary)" style={{pointerEvents:'none'}}>CHEST</text>
 
                 {/* Shoulders */}
                 <ellipse cx="83" cy="100" rx="20" ry="14"
-                  fill={selected==='Shoulders'?'#3b82f6':'#3b82f6'} fillOpacity={selected==='Shoulders'?0.75:0.22}
-                  stroke="#3b82f6" strokeWidth={selected==='Shoulders'?2.5:1}
+                  fill={selected==='Shoulders'?'var(--blue)':'var(--blue)'} fillOpacity={selected==='Shoulders'?0.75:0.22}
+                  stroke="var(--blue)" strokeWidth={selected==='Shoulders'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Shoulders'?null:'Shoulders')}/>
                 <ellipse cx="217" cy="100" rx="20" ry="14"
-                  fill={selected==='Shoulders'?'#3b82f6':'#3b82f6'} fillOpacity={selected==='Shoulders'?0.75:0.22}
-                  stroke="#3b82f6" strokeWidth={selected==='Shoulders'?2.5:1}
+                  fill={selected==='Shoulders'?'var(--blue)':'var(--blue)'} fillOpacity={selected==='Shoulders'?0.75:0.22}
+                  stroke="var(--blue)" strokeWidth={selected==='Shoulders'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Shoulders'?null:'Shoulders')}/>
-                <text x="150" y="97" textAnchor="middle" fontSize="9" fontWeight="700" fill="#3b82f6" style={{pointerEvents:'none'}}>SHOULDERS</text>
+                <text x="150" y="97" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--blue)" style={{pointerEvents:'none'}}>SHOULDERS</text>
 
                 {/* Arms */}
                 <ellipse cx="68" cy="138" rx="14" ry="26"
-                  fill={selected==='Arms'?'#8b5cf6':'#8b5cf6'} fillOpacity={selected==='Arms'?0.75:0.22}
-                  stroke="#8b5cf6" strokeWidth={selected==='Arms'?2.5:1}
+                  fill={selected==='Arms'?'var(--primary-light)':'var(--primary-light)'} fillOpacity={selected==='Arms'?0.75:0.22}
+                  stroke="var(--primary-light)" strokeWidth={selected==='Arms'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Arms'?null:'Arms')}/>
                 <ellipse cx="232" cy="138" rx="14" ry="26"
-                  fill={selected==='Arms'?'#8b5cf6':'#8b5cf6'} fillOpacity={selected==='Arms'?0.75:0.22}
-                  stroke="#8b5cf6" strokeWidth={selected==='Arms'?2.5:1}
+                  fill={selected==='Arms'?'var(--primary-light)':'var(--primary-light)'} fillOpacity={selected==='Arms'?0.75:0.22}
+                  stroke="var(--primary-light)" strokeWidth={selected==='Arms'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Arms'?null:'Arms')}/>
-                <text x="150" y="145" textAnchor="middle" fontSize="9" fontWeight="700" fill="#8b5cf6" style={{pointerEvents:'none'}}>ARMS</text>
+                <text x="150" y="145" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--primary-light)" style={{pointerEvents:'none'}}>ARMS</text>
 
                 {/* Core */}
                 <rect x="112" y="163" width="76" height="34" rx="10"
-                  fill={selected==='Core'?'#10b981':'#10b981'} fillOpacity={selected==='Core'?0.75:0.22}
-                  stroke="#10b981" strokeWidth={selected==='Core'?2.5:1}
+                  fill={selected==='Core'?'var(--green)':'var(--green)'} fillOpacity={selected==='Core'?0.75:0.22}
+                  stroke="var(--green)" strokeWidth={selected==='Core'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Core'?null:'Core')}/>
-                <text x="150" y="183" textAnchor="middle" fontSize="10" fontWeight="800" fill="#10b981" style={{pointerEvents:'none'}}>CORE</text>
+                <text x="150" y="183" textAnchor="middle" fontSize="10" fontWeight="800" fill="var(--green)" style={{pointerEvents:'none'}}>CORE</text>
 
                 {/* Legs quads */}
                 <ellipse cx="120" cy="258" rx="20" ry="50"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.75:0.22}
-                  stroke="#f59e0b" strokeWidth={selected==='Legs'?2.5:1}
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.75:0.22}
+                  stroke="var(--orange)" strokeWidth={selected==='Legs'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
                 <ellipse cx="180" cy="258" rx="20" ry="50"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.75:0.22}
-                  stroke="#f59e0b" strokeWidth={selected==='Legs'?2.5:1}
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.75:0.22}
+                  stroke="var(--orange)" strokeWidth={selected==='Legs'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
-                <text x="150" y="261" textAnchor="middle" fontSize="10" fontWeight="800" fill="#f59e0b" style={{pointerEvents:'none'}}>LEGS</text>
+                <text x="150" y="261" textAnchor="middle" fontSize="10" fontWeight="800" fill="var(--orange)" style={{pointerEvents:'none'}}>LEGS</text>
 
                 {/* Calves */}
                 <ellipse cx="101" cy="352" rx="12" ry="32"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.5:0.15}
-                  stroke="#f59e0b" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.5:0.15}
+                  stroke="var(--orange)" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
                 <ellipse cx="199" cy="352" rx="12" ry="32"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.5:0.15}
-                  stroke="#f59e0b" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.5:0.15}
+                  stroke="var(--orange)" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
               </>
             ) : (
               <>
                 {/* Back */}
                 <path d="M105 84 L150 96 L195 84 L200 185 L150 198 L100 185 Z"
-                  fill={selected==='Back'?'#ef4444':'#ef4444'} fillOpacity={selected==='Back'?0.75:0.3}
-                  stroke="#ef4444" strokeWidth={selected==='Back'?2.5:1}
+                  fill={selected==='Back'?'var(--red)':'var(--red)'} fillOpacity={selected==='Back'?0.75:0.3}
+                  stroke="var(--red)" strokeWidth={selected==='Back'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Back'?null:'Back')}/>
-                <text x="150" y="142" textAnchor="middle" fontSize="10" fontWeight="800" fill="#ef4444" style={{pointerEvents:'none'}}>BACK</text>
-                <text x="150" y="154" textAnchor="middle" fontSize="8" fontWeight="600" fill="#ef4444" style={{pointerEvents:'none'}}>LATS · TRAPS</text>
+                <text x="150" y="142" textAnchor="middle" fontSize="10" fontWeight="800" fill="var(--red)" style={{pointerEvents:'none'}}>BACK</text>
+                <text x="150" y="154" textAnchor="middle" fontSize="8" fontWeight="600" fill="var(--red)" style={{pointerEvents:'none'}}>LATS · TRAPS</text>
 
                 {/* Rear Shoulders */}
                 <ellipse cx="83" cy="100" rx="20" ry="14"
-                  fill={selected==='Shoulders'?'#3b82f6':'#3b82f6'} fillOpacity={selected==='Shoulders'?0.75:0.22}
-                  stroke="#3b82f6" strokeWidth={selected==='Shoulders'?2.5:1}
+                  fill={selected==='Shoulders'?'var(--blue)':'var(--blue)'} fillOpacity={selected==='Shoulders'?0.75:0.22}
+                  stroke="var(--blue)" strokeWidth={selected==='Shoulders'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Shoulders'?null:'Shoulders')}/>
                 <ellipse cx="217" cy="100" rx="20" ry="14"
-                  fill={selected==='Shoulders'?'#3b82f6':'#3b82f6'} fillOpacity={selected==='Shoulders'?0.75:0.22}
-                  stroke="#3b82f6" strokeWidth={selected==='Shoulders'?2.5:1}
+                  fill={selected==='Shoulders'?'var(--blue)':'var(--blue)'} fillOpacity={selected==='Shoulders'?0.75:0.22}
+                  stroke="var(--blue)" strokeWidth={selected==='Shoulders'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Shoulders'?null:'Shoulders')}/>
 
                 {/* Triceps */}
                 <ellipse cx="68" cy="138" rx="14" ry="26"
-                  fill={selected==='Arms'?'#8b5cf6':'#8b5cf6'} fillOpacity={selected==='Arms'?0.75:0.22}
-                  stroke="#8b5cf6" strokeWidth={selected==='Arms'?2.5:1}
+                  fill={selected==='Arms'?'var(--primary-light)':'var(--primary-light)'} fillOpacity={selected==='Arms'?0.75:0.22}
+                  stroke="var(--primary-light)" strokeWidth={selected==='Arms'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Arms'?null:'Arms')}/>
                 <ellipse cx="232" cy="138" rx="14" ry="26"
-                  fill={selected==='Arms'?'#8b5cf6':'#8b5cf6'} fillOpacity={selected==='Arms'?0.75:0.22}
-                  stroke="#8b5cf6" strokeWidth={selected==='Arms'?2.5:1}
+                  fill={selected==='Arms'?'var(--primary-light)':'var(--primary-light)'} fillOpacity={selected==='Arms'?0.75:0.22}
+                  stroke="var(--primary-light)" strokeWidth={selected==='Arms'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Arms'?null:'Arms')}/>
-                <text x="150" y="141" textAnchor="middle" fontSize="9" fontWeight="700" fill="#8b5cf6" style={{pointerEvents:'none'}}>TRICEPS</text>
+                <text x="150" y="141" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--primary-light)" style={{pointerEvents:'none'}}>TRICEPS</text>
 
                 {/* Glutes */}
                 <ellipse cx="125" cy="210" rx="24" ry="18"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.75:0.3}
-                  stroke="#f59e0b" strokeWidth={selected==='Legs'?2.5:1}
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.75:0.3}
+                  stroke="var(--orange)" strokeWidth={selected==='Legs'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
                 <ellipse cx="175" cy="210" rx="24" ry="18"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.75:0.3}
-                  stroke="#f59e0b" strokeWidth={selected==='Legs'?2.5:1}
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.75:0.3}
+                  stroke="var(--orange)" strokeWidth={selected==='Legs'?2.5:1}
                   style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
-                <text x="150" y="213" textAnchor="middle" fontSize="9" fontWeight="700" fill="#f59e0b" style={{pointerEvents:'none'}}>GLUTES</text>
+                <text x="150" y="213" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--orange)" style={{pointerEvents:'none'}}>GLUTES</text>
 
                 {/* Hamstrings */}
                 <ellipse cx="120" cy="270" rx="18" ry="44"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.6:0.2}
-                  stroke="#f59e0b" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.6:0.2}
+                  stroke="var(--orange)" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
                 <ellipse cx="180" cy="270" rx="18" ry="44"
-                  fill={selected==='Legs'?'#f59e0b':'#f59e0b'} fillOpacity={selected==='Legs'?0.6:0.2}
-                  stroke="#f59e0b" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
-                <text x="150" y="272" textAnchor="middle" fontSize="9" fontWeight="700" fill="#f59e0b" style={{pointerEvents:'none'}}>HAMSTRINGS</text>
+                  fill={selected==='Legs'?'var(--orange)':'var(--orange)'} fillOpacity={selected==='Legs'?0.6:0.2}
+                  stroke="var(--orange)" strokeWidth="1" style={{cursor:'pointer'}} onClick={()=>setSelected(s=>s==='Legs'?null:'Legs')}/>
+                <text x="150" y="272" textAnchor="middle" fontSize="9" fontWeight="700" fill="var(--orange)" style={{pointerEvents:'none'}}>HAMSTRINGS</text>
               </>
             )}
           </svg>
@@ -237,7 +237,7 @@ export default function BodyMapPage() {
         <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:selected?20:0}}>
           {MUSCLE_GROUPS.filter(g=>view==='front'?g.id!=='Back':g.id!=='Chest'&&g.id!=='Core').map(g=>(
             <button key={g.id} onClick={()=>setSelected(s=>s===g.id?null:g.id)}
-              style={{padding:'8px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'2px solid '+(selected===g.id?g.color:'var(--border)'),background:selected===g.id?g.color:'var(--card)',color:selected===g.id?'#fff':'var(--text)',transition:'all 0.15s',WebkitTapHighlightColor:'transparent'}}>
+              style={{padding:'8px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'2px solid '+(selected===g.id?g.color:'var(--border)'),background:selected===g.id?g.color:'var(--card)',color:selected===g.id?'var(--colored-label)':'var(--text)',transition:'all 0.15s',WebkitTapHighlightColor:'transparent'}}>
               {g.emoji} {g.label}
             </button>
           ))}
@@ -248,7 +248,7 @@ export default function BodyMapPage() {
           <div style={{animation:'slideUp 0.25s ease'}}>
             <div style={{background:'var(--card)',borderRadius:20,border:'1.5px solid var(--border)',overflow:'hidden',marginBottom:16}}>
               {/* Gradient header */}
-              <div style={{background:`linear-gradient(135deg,${selectedGroup.color},${selectedGroup.color}99)`,padding:'18px 20px',color:'#fff'}}>
+              <div style={{background:`linear-gradient(135deg,${selectedGroup.color},color-mix(in srgb, ${selectedGroup.color} 82%, var(--surface)))`,padding:'18px 20px',color:'var(--colored-label)'}}>
                 <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
                   <div style={{fontSize:32}}>{selectedGroup.emoji}</div>
                   <div>
@@ -298,7 +298,7 @@ export default function BodyMapPage() {
               {/* View all button */}
               <div style={{padding:'14px 16px'}}>
                 <button onClick={()=>router.push('/workout/exercises?body='+selected)}
-                  style={{width:'100%',padding:'13px',background:selectedGroup.color,border:'none',borderRadius:14,color:'#fff',fontWeight:700,fontSize:14,cursor:'pointer'}}>
+                  style={{width:'100%',padding:'13px',background:selectedGroup.color,border:'none',borderRadius:14,color:'var(--primary-contrast)',fontWeight:700,fontSize:14,cursor:'pointer'}}>
                   View all {selectedGroup.label} exercises →
                 </button>
               </div>

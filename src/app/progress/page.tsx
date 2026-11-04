@@ -111,7 +111,7 @@ export default function ProgressPage() {
               )
             })}
             <button onClick={() => setShowNewAch(false)}
-              style={{ width: '100%', padding: '14px', background: 'var(--primary)', border: 'none', borderRadius: 14, color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginTop: 8 }}>
+              style={{ width: '100%', padding: '14px', background: 'var(--primary)', border: 'none', borderRadius: 14, color: 'var(--primary-contrast)', fontWeight: 700, fontSize: 15, cursor: 'pointer', marginTop: 8 }}>
               Awesome! 🎉
             </button>
           </div>
@@ -130,7 +130,7 @@ export default function ProgressPage() {
         </div>
 
         {/* Streak hero card */}
-        <div style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', borderRadius: 24, padding: '20px', marginBottom: 16, color: '#fff', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: 'linear-gradient(135deg,var(--red),var(--red))', borderRadius: 24, padding: '20px', marginBottom: 16, color: 'var(--primary-contrast)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -10, top: -10, fontSize: 100, opacity: 0.1, lineHeight: 1 }}>🔥</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ textAlign: 'center' }}>
@@ -169,7 +169,7 @@ export default function ProgressPage() {
                 const inStreak = i >= 14 - streak.current
                 return (
                   <div key={i} style={{ flex: 1, height: 24, borderRadius: 6, background: inStreak ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)', border: isToday ? '2px solid white' : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {inStreak && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />}
+                    {inStreak && <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)' }} />}
                   </div>
                 )
               })}
@@ -180,12 +180,12 @@ export default function ProgressPage() {
         {/* Stats grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
           {[
-            { icon: '🏋️', label: 'Workouts', val: stats.workouts, color: '#6366f1' },
-            { icon: '🍽️', label: 'Meals logged', val: stats.meals, color: '#10b981' },
-            { icon: '🏆', label: 'PRs set', val: stats.prs, color: '#f59e0b' },
-            { icon: '⚡', label: 'Volume (kg)', val: stats.volume >= 1000 ? Math.round(stats.volume/1000)+'k' : stats.volume, color: '#ef4444' },
-            { icon: '📅', label: 'Days logged', val: stats.daysLogged, color: '#3b82f6' },
-            { icon: weightChange < 0 ? '📉' : '📈', label: 'Weight change', val: (weightChange > 0 ? '+' : '') + weightChange.toFixed(1) + 'kg', color: weightChange < 0 ? '#10b981' : '#ef4444' },
+            { icon: '🏋️', label: 'Workouts', val: stats.workouts, color: 'var(--primary)' },
+            { icon: '🍽️', label: 'Meals logged', val: stats.meals, color: 'var(--green)' },
+            { icon: '🏆', label: 'PRs set', val: stats.prs, color: 'var(--orange)' },
+            { icon: '⚡', label: 'Volume (kg)', val: stats.volume >= 1000 ? Math.round(stats.volume/1000)+'k' : stats.volume, color: 'var(--red)' },
+            { icon: '📅', label: 'Days logged', val: stats.daysLogged, color: 'var(--blue)' },
+            { icon: weightChange < 0 ? '📉' : '📈', label: 'Weight change', val: (weightChange > 0 ? '+' : '') + weightChange.toFixed(1) + 'kg', color: weightChange < 0 ? 'var(--green)' : 'var(--red)' },
           ].map(s => (
             <div key={s.label} className="card" style={{ padding: '14px 12px', textAlign: 'center' }}>
               <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
@@ -199,7 +199,7 @@ export default function ProgressPage() {
         <div style={{ display: 'flex', background: 'var(--card2)', borderRadius: 14, padding: 3, marginBottom: 16, border: '0.5px solid var(--border)' }}>
           {[['overview','Overview'],['achievements','Achievements'],['challenges','Challenges']].map(([id,label]) => (
             <button key={id} onClick={() => setTab(id as any)}
-              style={{ flex: 1, padding: '9px', borderRadius: 11, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: tab === id ? 'var(--primary)' : 'transparent', color: tab === id ? '#fff' : 'var(--muted)' }}>
+              style={{ flex: 1, padding: '9px', borderRadius: 11, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: tab === id ? 'var(--primary)' : 'transparent', color: tab === id ? 'var(--primary-contrast)' : 'var(--muted)' }}>
               {label}
             </button>
           ))}
@@ -215,7 +215,7 @@ export default function ProgressPage() {
                 <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--primary)' }}>{pct}%</div>
               </div>
               <div style={{ height: 8, background: 'var(--card2)', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-                <div style={{ height: '100%', background: 'linear-gradient(90deg,var(--primary),#10b981)', width: pct + '%', borderRadius: 4, transition: 'width 1s ease' }} />
+                <div style={{ height: '100%', background: 'linear-gradient(90deg,var(--primary),var(--green))', width: pct + '%', borderRadius: 4, transition: 'width 1s ease' }} />
               </div>
               <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center' }}>
                 {earnedList.length} of {ACHIEVEMENTS.filter(a => !a.secret).length} achievements unlocked
@@ -305,7 +305,7 @@ export default function ProgressPage() {
                           borderRadius: 16, border: isEarned ? `1.5px solid ${rc.border}` : '0.5px solid var(--border)',
                           opacity: isEarned ? 1 : 0.55, transition: 'all 0.2s'
                         }}>
-                          <div style={{ width: 48, height: 48, borderRadius: 14, background: isEarned ? rc.border + '44' : 'var(--card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+                          <div style={{ width: 48, height: 48, borderRadius: 14, background: isEarned ? `color-mix(in srgb, ${rc.border} 27%, transparent)` : 'var(--card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
                             {isEarned ? ach.icon : '🔒'}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -316,8 +316,8 @@ export default function ProgressPage() {
                             </div>
                           </div>
                           {isEarned && (
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'checkPop 0.3s ease' }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, animation: 'checkPop 0.3s ease' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--primary-contrast)" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
                             </div>
                           )}
                         </div>
@@ -341,7 +341,7 @@ export default function ProgressPage() {
         {tab === 'challenges' && (
           <div>
             {/* Week header */}
-            <div style={{ background: 'linear-gradient(135deg,#6366f1,#818cf8)', borderRadius: 20, padding: '16px 20px', marginBottom: 16, color: '#fff' }}>
+            <div style={{ background: 'linear-gradient(135deg,var(--primary),var(--primary-dark))', borderRadius: 20, padding: '16px 20px', marginBottom: 16, color: 'var(--primary-contrast)' }}>
               <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
                 Weekly challenges
               </div>
@@ -362,13 +362,13 @@ export default function ProgressPage() {
               return (
                 <div key={ch.id} className="card" style={{ marginBottom: 12, opacity: completed ? 0.8 : 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 14, background: ch.color + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: `color-mix(in srgb, ${ch.color} 14%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
                       {completed ? '✅' : ch.icon}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                         <div style={{ fontWeight: 700, fontSize: 15 }}>{ch.title}</div>
-                        {completed && <div style={{ padding: '2px 8px', background: '#d1fae5', borderRadius: 99, fontSize: 10, fontWeight: 700, color: '#059669' }}>Done!</div>}
+                        {completed && <div style={{ padding: '2px 8px', background: 'var(--green-bg)', borderRadius: 99, fontSize: 10, fontWeight: 700, color: 'var(--green)' }}>Done!</div>}
                       </div>
                       <div style={{ fontSize: 12, color: 'var(--muted)' }}>{ch.description}</div>
                     </div>
@@ -378,7 +378,7 @@ export default function ProgressPage() {
                     </div>
                   </div>
                   <div style={{ height: 6, background: 'var(--card2)', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', background: completed ? '#10b981' : ch.color, borderRadius: 3, width: pct + '%', transition: 'width 0.8s ease' }} />
+                    <div style={{ height: '100%', background: completed ? 'var(--green)' : ch.color, borderRadius: 3, width: pct + '%', transition: 'width 0.8s ease' }} />
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, textAlign: 'right' }}>
                     {completed ? 'Completed! 🎉' : `${ch.target - progress} days to go`}

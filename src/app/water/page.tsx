@@ -82,8 +82,8 @@ export default function WaterPage() {
 
   const pct = Math.min(1, todayMl / waterGoal)
   const reached = todayMl >= waterGoal
-  const wc = reached ? '#10b981' : '#3b82f6'
-  const wl = reached ? '#34d399' : '#60a5fa'
+  const wc = reached ? 'var(--green)' : 'var(--blue)'
+  const wl = reached ? 'var(--green)' : 'var(--blue)'
   const GW = 180, GH = 260
   const fillH = Math.round((GH - 20) * pct)
   const fillY = GH - 10 - fillH
@@ -98,10 +98,10 @@ export default function WaterPage() {
     const amt = calData[dateStr] || 0
     if (!amt) return null
     const p = amt / waterGoal
-    if (p >= 1) return '#10b981'
-    if (p >= 0.6) return '#3b82f6'
-    if (p >= 0.3) return '#93c5fd'
-    return '#dbeafe'
+    if (p >= 1) return 'var(--green)'
+    if (p >= 0.6) return 'var(--blue)'
+    if (p >= 0.3) return 'var(--blue)'
+    return 'var(--blue-bg)'
   }
 
   return (
@@ -116,7 +116,7 @@ export default function WaterPage() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 20px 24px' }}>
         <div style={{ position: 'relative', width: 120, height: 120, marginBottom: 20 }}>
           <svg width="120" height="120" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" strokeWidth="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--card3)" strokeWidth="10"/>
             <circle cx="60" cy="60" r="50" fill="none" stroke={wc} strokeWidth="10" strokeLinecap="round"
               strokeDasharray={`${2*Math.PI*50}`} strokeDashoffset={2*Math.PI*50*(1-pct)}
               style={{ transformOrigin:'60px 60px', transform:'rotate(-90deg)', transition:'stroke-dashoffset 0.8s ease' }}/>
@@ -133,7 +133,7 @@ export default function WaterPage() {
               <path d={`M20 10 L10 ${GH-10} Q10 ${GH} 20 ${GH} L${GW-20} ${GH} Q${GW-10} ${GH} ${GW-10} ${GH-10} L${GW-20} 10 Z`}/>
             </clipPath>
           </defs>
-          <path d={`M20 10 L10 ${GH-10} Q10 ${GH} 20 ${GH} L${GW-20} ${GH} Q${GW-10} ${GH} ${GW-10} ${GH-10} L${GW-20} 10 Z`} fill="#f0f4ff" stroke="#e2e8f0" strokeWidth="2"/>
+          <path d={`M20 10 L10 ${GH-10} Q10 ${GH} 20 ${GH} L${GW-20} ${GH} Q${GW-10} ${GH} ${GW-10} ${GH-10} L${GW-20} 10 Z`} fill="var(--card2)" stroke="var(--card3)" strokeWidth="2"/>
           <g clipPath="url(#cup-clip)">
             {pct > 0 && <>
               <rect x="10" y={fillY+10} width={GW-20} height={Math.max(0,fillH)} fill={wc} opacity="0.75"
@@ -145,25 +145,25 @@ export default function WaterPage() {
                 <circle cx="120" cy={fillY+100} r="4" fill="rgba(255,255,255,0.25)" style={{ animation:'b2 3s ease-in-out infinite 0.8s' }}/>
                 <circle cx="80" cy={fillY+150} r="3" fill="rgba(255,255,255,0.2)" style={{ animation:'b1 3.5s ease-in-out infinite 1.5s' }}/>
               </>}
-              {pct > 0.1 && <text x={GW/2} y={fillY+Math.max(35,fillH/2+10)} textAnchor="middle" fontSize="24" fontWeight="800" fill="white" opacity="0.95">{todayMl}ml</text>}
+              {pct > 0.1 && <text x={GW/2} y={fillY+Math.max(35,fillH/2+10)} textAnchor="middle" fontSize="24" fontWeight="800" fill="var(--primary-contrast)" opacity="0.95">{todayMl}ml</text>}
             </>}
           </g>
-          <path d={`M20 10 L10 ${GH-10} Q10 ${GH} 20 ${GH} L${GW-20} ${GH} Q${GW-10} ${GH} ${GW-10} ${GH-10} L${GW-20} 10 Z`} fill="none" stroke="rgba(99,102,241,0.2)" strokeWidth="2"/>
+          <path d={`M20 10 L10 ${GH-10} Q10 ${GH} 20 ${GH} L${GW-20} ${GH} Q${GW-10} ${GH} ${GW-10} ${GH-10} L${GW-20} 10 Z`} fill="none" stroke="color-mix(in srgb, var(--water) 20%, transparent)" strokeWidth="2"/>
           <path d="M35 20 L28 100" stroke="rgba(255,255,255,0.6)" strokeWidth="5" strokeLinecap="round"/>
         </svg>
 
-        <div style={{ fontSize: 14, color: reached ? '#10b981' : 'var(--muted)', fontWeight: 600, marginTop: 12 }}>
+        <div style={{ fontSize: 14, color: reached ? 'var(--green)' : 'var(--muted)', fontWeight: 600, marginTop: 12 }}>
           {reached ? '🎉 Daily goal reached!' : `${waterGoal - todayMl}ml remaining`}
         </div>
       </div>
 
       <div style={{ padding: '0 20px 20px' }}>
-        {saveError && <p role="alert" style={{ color: '#dc2626', fontSize: 13, textAlign: 'center', margin: '0 0 12px' }}>{saveError}</p>}
+        {saveError && <p role="alert" style={{ color: 'var(--red)', fontSize: 13, textAlign: 'center', margin: '0 0 12px' }}>{saveError}</p>}
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12, textAlign: 'center' }}>Select amount</div>
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
           {PRESETS.map(ml => (
             <button key={ml} onClick={() => setSelectedMl(ml)} disabled={saving}
-              style={{ flexShrink: 0, padding: '12px 18px', borderRadius: 16, border: `2px solid ${selectedMl===ml?wc:'var(--border)'}`, background: selectedMl===ml?`${wc}18`:'var(--card)', color: selectedMl===ml?wc:'var(--muted)', fontWeight: 700, fontSize: 15, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              style={{ flexShrink: 0, padding: '12px 18px', borderRadius: 16, border: `2px solid ${selectedMl===ml?wc:'var(--border)'}`, background: selectedMl===ml?`color-mix(in srgb, ${wc} 10%, transparent)`:'var(--card)', color: selectedMl===ml?wc:'var(--muted)', fontWeight: 700, fontSize: 15, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
               <span style={{ fontSize: 20, fontWeight: 800 }}>{ml}</span>
               <span style={{ fontSize: 10 }}>ml</span>
             </button>
@@ -173,7 +173,7 @@ export default function WaterPage() {
 
       <div style={{ padding: '0 20px 16px' }}>
         <button onClick={() => addWater(selectedMl)} disabled={saving}
-          style={{ width: '100%', padding: '17px', borderRadius: 20, background: wc, color: '#fff', fontSize: 17, fontWeight: 800, border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: `0 6px 20px ${wc}40` }}>
+          style={{ width: '100%', padding: '17px', borderRadius: 20, background: wc, color: 'var(--primary-contrast)', fontSize: 17, fontWeight: 800, border: 'none', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1, boxShadow: `0 6px 20px color-mix(in srgb, ${wc} 35%, transparent)` }}>
           {saving ? 'Saving…' : `+ WATER (${selectedMl}ml)`}
         </button>
       </div>
@@ -189,7 +189,7 @@ export default function WaterPage() {
               onKeyDown={e => e.key==='Enter' && parseInt(customMl)>0 && addWater(parseInt(customMl))}
               style={{ flex: 1, textAlign: 'center', fontWeight: 700, fontSize: 16 }} autoFocus/>
             <button onClick={() => parseInt(customMl)>0 && addWater(parseInt(customMl))} disabled={saving}
-              style={{ padding: '12px 18px', borderRadius: 14, background: wc, color: '#fff', border: 'none', fontWeight: 700, cursor: saving ? 'wait' : 'pointer' }}>{saving ? 'Saving…' : 'Add'}</button>
+              style={{ padding: '12px 18px', borderRadius: 14, background: wc, color: 'var(--primary-contrast)', border: 'none', fontWeight: 700, cursor: saving ? 'wait' : 'pointer' }}>{saving ? 'Saving…' : 'Add'}</button>
             <button onClick={() => { setShowCustom(false); setCustomMl('') }} disabled={saving}
               style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: 20, cursor: 'pointer' }}>×</button>
           </div>
@@ -201,7 +201,7 @@ export default function WaterPage() {
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>Today's log</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {[...logs].reverse().map((l, i) => (
-              <div key={i} style={{ padding: '5px 12px', borderRadius: 99, background: `${wc}15`, color: wc, fontSize: 12, fontWeight: 700 }}>+{l.amount_ml}ml</div>
+              <div key={i} style={{ padding: '5px 12px', borderRadius: 99, background: `color-mix(in srgb, ${wc} 9%, transparent)`, color: wc, fontSize: 12, fontWeight: 700 }}>+{l.amount_ml}ml</div>
             ))}
           </div>
         </div>
@@ -231,14 +231,14 @@ export default function WaterPage() {
               const isToday = dateStr === today
               return (
                 <div key={day} style={{ aspectRatio:'1', borderRadius:10, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:bg||(isToday?'var(--primary-bg)':'transparent'), border:isToday?`2px solid ${wc}`:'2px solid transparent' }}>
-                  <div style={{ fontSize:12, fontWeight:isToday?800:600, color:bg?'#fff':isToday?wc:'var(--text)' }}>{day}</div>
+                  <div style={{ fontSize:12, fontWeight:isToday?800:600, color:bg?'var(--colored-label)':isToday?wc:'var(--text)' }}>{day}</div>
                   {amt>0 && <div style={{ fontSize:8, fontWeight:700, color:bg?'rgba(255,255,255,0.85)':wc }}>{amt>=1000?`${(amt/1000).toFixed(1)}L`:amt}</div>}
                 </div>
               )
             })}
           </div>
           <div style={{ display:'flex', gap:10, marginTop:16, justifyContent:'center', flexWrap:'wrap' }}>
-            {[{c:'#10b981',l:'Goal met'},{c:'#3b82f6',l:'60%+'},{c:'#93c5fd',l:'30%+'},{c:'#dbeafe',l:'Started'}].map(l=>(
+            {[{c:'var(--green)',l:'Goal met'},{c:'var(--blue)',l:'60%+'},{c:'var(--blue)',l:'30%+'},{c:'var(--blue-bg)',l:'Started'}].map(l=>(
               <div key={l.l} style={{ display:'flex', alignItems:'center', gap:5 }}>
                 <div style={{ width:10, height:10, borderRadius:3, background:l.c }}/>
                 <span style={{ fontSize:10, color:'var(--muted)', fontWeight:500 }}>{l.l}</span>
